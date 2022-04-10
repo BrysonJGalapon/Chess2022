@@ -1,8 +1,12 @@
 package random_player
 
-import "log"
 import "time"
+import "math/rand"
 import b "galapb/chess2022/pkg/board"
+
+func init() {
+	rand.Seed(33423432)
+}
 
 type RandomPlayer struct {
 	prompt   chan b.Move
@@ -22,8 +26,6 @@ func (rp *RandomPlayer) Start(board b.Board, quit chan bool) {
 			return
 		default:
 			move := <-rp.prompt
-			log.Printf("Received move: %s", move)
-
 			if err = board.Make(move); err != nil {
 				panic(err)
 			}

@@ -37,11 +37,13 @@ func main() {
 		move = <-whiteResponse
 
 		log.Printf("White made move: %s", move)
+		log.Printf("Board:\n%s", game.GetBoard().String())
 
 		blackPrompt <- move
 		move = <-blackResponse
 
 		log.Printf("Black made move: %s", move)
+		log.Printf("Board:\n%s", game.GetBoard().String())
 	}
 
 	log.Println(game)

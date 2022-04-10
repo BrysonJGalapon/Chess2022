@@ -104,6 +104,11 @@ func (b *board) getPieceAt(square Square) (*Piece, error) {
 }
 
 func (b *board) Make(m Move) error {
+	// Do nothing on empty move
+	if m.IsEmpty() {
+		return nil
+	}
+
 	// TODO
 	return nil
 }
