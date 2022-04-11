@@ -191,8 +191,62 @@ func (p *Piece) IsValidMovement(srcSquare, dstSquare Square) error {
 }
 
 func (p *Piece) IsValidCapture(srcSquare, dstSquare Square) error {
-	// TODO
-	return nil
+	switch p.color {
+	case WHITE:
+		switch p.pieceType {
+		case KING:
+			dst := srcSquare.DistanceSquaredTo(dstSquare)
+			if dst <= 2 {
+				// king can capture 1 square in any direction
+				return nil
+			}
+		case QUEEN:
+		case BISHOP:
+		case KNIGHT:
+		case ROOK:
+			// valid captures for [queen, bishop, knight, rook] are exact same as movement
+			return p.IsValidMovement(srcSquare, dstSquare)
+		case PAWN:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Abs(endCol-startCol) == 1 && endRow == startRow+1 {
+				// white pawns can capture upward diagonally
+				return nil
+			}
+		}
+	case BLACK:
+		switch p.pieceType {
+		case KING:
+			dst := srcSquare.DistanceSquaredTo(dstSquare)
+			if dst <= 2 {
+				// king can capture 1 square in any direction
+				return nil
+			}
+		case QUEEN:
+		case BISHOP:
+		case KNIGHT:
+		case ROOK:
+			// valid captures for [queen, bishop, knight, rook] are exact same as movement
+			return p.IsValidMovement(srcSquare, dstSquare)
+		case PAWN:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Abs(endCol-startCol) == 1 && endRow == startRow-1 {
+				// black pawns can capture downward diagonally
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("%s can't capture from %s to %s", (*p).String(), srcSquare.GetName(), dstSquare.GetName())
 }
 
 func (p *Piece) String() string {
