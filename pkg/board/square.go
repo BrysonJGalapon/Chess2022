@@ -1,6 +1,8 @@
 package board
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Square uint64
 
@@ -16,6 +18,7 @@ var SQUARE_STRINGS [64]string = [64]string{
 }
 
 var coordToSquare [8][8]Square = [8][8]Square{{}, {}, {}, {}, {}, {}, {}, {}}
+var squareToCoord map[Square][2]int = make(map[Square][2]int)
 var stringToSquare map[string]Square = make(map[string]Square)
 var squareToBitMap map[Square]BitMap = make(map[Square]BitMap)
 
@@ -27,6 +30,7 @@ func init() {
 	for r := 0; r < 8; r++ {
 		for c := 0; c < 8; c++ {
 			coordToSquare[r][c] = square
+			squareToCoord[square] = [2]int{r, c}
 			square <<= 1
 		}
 	}
@@ -48,26 +52,44 @@ func init() {
 	}
 }
 
-func (s *Square) GetX() int {
-	// TODO
-	panic("Unimplemented")
+func (s Square) GetRow() int {
+	return squareToCoord[s][0]
 }
 
-func (s *Square) GetY() int {
-	// TODO
-	panic("Unimplemented")
+func (s Square) GetCol() int {
+	return squareToCoord[s][1]
 }
 
-func (s *Square) ToBitMap() BitMap {
-	ret := squareToBitMap[*s]
+func (s Square) GetRank() int {
+	row := s.GetRow()
+	return 8 - row
+}
+
+func (s Square) GetFile() int {
+	col := s.GetCol()
+	return col + 1
+}
+
+func (s Square) ToBitMap() BitMap {
+	ret := squareToBitMap[s]
 	return ret
 }
 
-func (s *Square) String() string {
+func (s Square) DistanceSquaredTo(o Square) int {
+	startRow := s.GetRow()
+	startCol := s.GetCol()
+
+	endRow := o.GetRow()
+	endCol := o.GetCol()
+
+	return Pow2(Abs(endRow-startRow)) + Pow2(Abs(endCol-startCol))
+}
+
+func (s Square) String() string {
 	ret := ""
 	var square Square = 1
 	for i := 0; i < 64; i++ {
-		if *s == square {
+		if s == square {
 			ret += "X"
 		} else {
 			ret += "-"
@@ -83,10 +105,10 @@ func (s *Square) String() string {
 	return ret
 }
 
-func (s *Square) GetName() string {
+func (s Square) GetName() string {
 	var square Square = 1
 	for _, squareString := range SQUARE_STRINGS {
-		if *s == square {
+		if s == square {
 			return squareString
 		}
 		square <<= 1

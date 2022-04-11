@@ -31,6 +31,170 @@ func (p *Piece) GetPieceType() PieceType {
 	return p.pieceType
 }
 
+func (p *Piece) IsValidMovement(srcSquare, dstSquare Square) error {
+	if srcSquare == dstSquare {
+		return fmt.Errorf("can't move a piece onto itself")
+	}
+
+	switch p.color {
+	case WHITE:
+		switch p.pieceType {
+		case KING:
+			dst := srcSquare.DistanceSquaredTo(dstSquare)
+			if dst <= 2 {
+				// king can move exactly 1 square in any direction
+				return nil
+			}
+
+			if srcSquare == GetSquareFromString("E1") && dst == 4 && srcSquare.GetRow() == dstSquare.GetRow() {
+				// if king is on E1 square, king can move left or right exactly 2 squares (simulates castling)
+				return nil
+			}
+		case QUEEN:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Abs(endRow-startRow) == Abs(endCol-startCol) {
+				// queens can move diagonally, any number of squares
+				return nil
+			}
+
+			if Xor(endRow == startRow, endCol == startCol) {
+				// queens can move horizontally or vertically, any number of squares
+				return nil
+			}
+		case BISHOP:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Abs(endRow-startRow) == Abs(endCol-startCol) {
+				// bishops can move diagonally, any number of squares
+				return nil
+			}
+		case KNIGHT:
+			dst := srcSquare.DistanceSquaredTo(dstSquare)
+			if dst == 5 {
+				// knight can move in L-shape
+				return nil
+			}
+		case ROOK:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Xor(endRow == startRow, endCol == startCol) {
+				// bishops can move horizontally or vertically, any number of squares
+				return nil
+			}
+		case PAWN:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if startCol == endCol && endRow == startRow+1 {
+				// white pawns can move up 1 square
+				return nil
+			}
+
+			if srcSquare.GetRank() == 2 && endRow == startRow+2 {
+				// if pawn is on 2nd rank, pawn can move up 2 squares
+				return nil
+			}
+		}
+	case BLACK:
+		switch p.pieceType {
+		case KING:
+			dst := srcSquare.DistanceSquaredTo(dstSquare)
+			if dst <= 2 {
+				// king can move exactly 1 square in any direction
+				return nil
+			}
+
+			if srcSquare == GetSquareFromString("E8") && dst == 4 && srcSquare.GetRow() == dstSquare.GetRow() {
+				// if king is on E8 square, king can move left or right exactly 2 squares (simulates castling)
+				return nil
+			}
+		case QUEEN:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Abs(endRow-startRow) == Abs(endCol-startCol) {
+				// queens can move diagonally, any number of squares
+				return nil
+			}
+
+			if Xor(endRow == startRow, endCol == startCol) {
+				// queens can move horizontally or vertically, any number of squares
+				return nil
+			}
+		case BISHOP:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Abs(endRow-startRow) == Abs(endCol-startCol) {
+				// bishops can move diagonally, any number of squares
+				return nil
+			}
+		case KNIGHT:
+			dst := srcSquare.DistanceSquaredTo(dstSquare)
+			if dst == 5 {
+				// knight can move in L-shape
+				return nil
+			}
+		case ROOK:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if Xor(endRow == startRow, endCol == startCol) {
+				// bishops can move horizontally or vertically, any number of squares
+				return nil
+			}
+		case PAWN:
+			startRow := srcSquare.GetRow()
+			startCol := srcSquare.GetCol()
+
+			endRow := dstSquare.GetRow()
+			endCol := dstSquare.GetCol()
+
+			if startCol == endCol && endRow == startRow-1 {
+				// black pawns can move down 1 square
+				return nil
+			}
+
+			if srcSquare.GetRank() == 7 && endRow == startRow-2 {
+				// if pawn is on 7th rank, pawn can move down 2 squares
+				return nil
+			}
+		}
+	}
+
+	return fmt.Errorf("%s can't move from %s to %s", (*p).String(), srcSquare.GetName(), dstSquare.GetName())
+}
+
+func (p *Piece) IsValidCapture(srcSquare, dstSquare Square) error {
+	// TODO
+	return nil
+}
+
 func (p *Piece) String() string {
 	switch p.color {
 	case WHITE:

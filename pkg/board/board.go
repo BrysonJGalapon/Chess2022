@@ -9,8 +9,8 @@ type Board interface {
 	String() string
 
 	makeUnsafe(Move)
-	isValidPosition() error
 	toggleTurn()
+	setTurn(Color)
 	isCheck() bool
 }
 
@@ -204,6 +204,10 @@ func (b *board) toggleTurn() {
 	b.turn = b.turn.Opposite()
 }
 
+func (b *board) setTurn(color Color) {
+	b.turn = color
+}
+
 func (b *board) pickUpPieceAt(s Square) *Piece {
 	piece, err := b.getPieceAt(s)
 	if err != nil {
@@ -272,19 +276,28 @@ func (b *board) IsValidMove(m Move) error {
 		return fmt.Errorf("%s can't move a piece onto another %s piece", b.GetTurn(), dstPiece.GetColor())
 	}
 
+	// check that the src piece is moving according to its movement set (e.g. a knight moves in L shape)
+	if srcPiece.IsValidMovement(srcSquare, dstSquare) != nil {
+		return fmt.Errorf("move: %s falls outside of %s's movement or capture capabilities", m, srcPiece)
+	}
+	// if srcPiece.IsValidMovement(srcSquare, dstSquare) != nil && srcPiece.IsValidCapture(srcSquare, dstSquare) != nil {
+	// 	return fmt.Errorf("move: %s falls outside of %s's movement or capture capabilities", m, srcPiece)
+	// }
+
+	// TODO
+	// 1. check that src pieces move according to their movement sets (e.g. a knight moves like a knight)
+	// 2. en passent?
+	// 3. castling (through, into, out-of)
+
+	// check that the resulting position does not put the current king in check
 	bCopy := b.Copy()
 	bCopy.makeUnsafe(m)
-	return bCopy.isValidPosition()
-}
-
-func (b *board) isValidPosition() error {
-	bCopy := b.Copy()
-	bCopy.toggleTurn()
+	bCopy.setTurn(b.GetTurn())
 	if bCopy.isCheck() {
-		return fmt.Errorf("opponent king can't be in check")
+		return fmt.Errorf("%s can't make a move %s that puts king in check", m.String(), b.GetTurn())
 	}
 
-	// position passes all checks
+	// move passes all checks
 	return nil
 }
 

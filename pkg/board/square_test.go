@@ -103,3 +103,57 @@ func TestSquareStringE4(t *testing.T) {
 		t.Fatalf("\nExpected: \n%s\nActual: \n%s", E4_OUTPUT, square.String())
 	}
 }
+
+func TestSquareRank(t *testing.T) {
+	square := GetSquareFromString("A1")
+	if square.GetRank() != 1 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 1, square.GetRank())
+	}
+
+	square = GetSquareFromString("E4")
+	if square.GetRank() != 4 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 4, square.GetRank())
+	}
+
+	square = GetSquareFromString("H8")
+	if square.GetRank() != 8 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 8, square.GetRank())
+	}
+
+	square = GetSquareFromString("C8")
+	if square.GetRank() != 8 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 8, square.GetRank())
+	}
+
+	square = GetSquareFromString("A2")
+	if square.GetRank() != 2 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 2, square.GetRank())
+	}
+}
+
+func TestSquareFile(t *testing.T) {
+	square := GetSquareFromString("A1")
+	if square.GetFile() != 1 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 1, square.GetFile())
+	}
+
+	square = GetSquareFromString("E4")
+	if square.GetFile() != 5 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 5, square.GetFile())
+	}
+
+	square = GetSquareFromString("H8")
+	if square.GetFile() != 8 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 8, square.GetFile())
+	}
+
+	square = GetSquareFromString("C8")
+	if square.GetFile() != 3 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 3, square.GetFile())
+	}
+
+	square = GetSquareFromString("A2")
+	if square.GetFile() != 1 {
+		t.Fatalf("\nExpected: \n%d\nActual: \n%d", 1, square.GetFile())
+	}
+}
