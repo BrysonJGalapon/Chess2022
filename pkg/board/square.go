@@ -105,6 +105,97 @@ func (s Square) String() string {
 	return ret
 }
 
+func (s Square) DirectionTo(o Square) Direction {
+	startRank := s.GetRank()
+	startFile := s.GetFile()
+
+	endRank := o.GetRank()
+	endFile := o.GetFile()
+
+	switch {
+	case endRank > startRank && endFile == startFile:
+		return NORTH
+	case endRank > startRank && endFile > startFile:
+		return NORTHEAST
+	case endRank == startRank && endFile > startFile:
+		return EAST
+	case endRank < startRank && endFile > startFile:
+		return SOUTHEAST
+	case endRank < startRank && endFile == startFile:
+		return SOUTH
+	case endRank < startRank && endFile < startFile:
+		return SOUTHWEST
+	case endRank == startRank && endFile < startFile:
+		return WEST
+	case endRank > startRank && endFile < startFile:
+		return NORTHWEST
+	}
+
+	panic(fmt.Sprintf("can't get direction from %s to %s", s.GetName(), o.GetName()))
+}
+
+func (s Square) Step(d Direction) (Square, error) {
+	startRank := s.GetRank()
+	startFile := s.GetFile()
+
+	switch d {
+	case NORTH:
+		if startRank == 8 {
+			return 0, fmt.Errorf("can't go north if on upper edge")
+		}
+		return GetSquareFromRankAndFile(startRank+1, startFile), nil
+	case NORTHEAST:
+		if startRank == 8 {
+			return 0, fmt.Errorf("can't go north if on upper edge")
+		}
+		if startFile == 8 {
+			return 0, fmt.Errorf("can't go east if on right edge")
+		}
+		return GetSquareFromRankAndFile(startRank+1, startFile+1), nil
+	case EAST:
+		if startFile == 8 {
+			return 0, fmt.Errorf("can't go east if on right edge")
+		}
+		return GetSquareFromRankAndFile(startRank, startFile+1), nil
+	case SOUTHEAST:
+		if startRank == 0 {
+			return 0, fmt.Errorf("can't go south if on lower edge")
+		}
+		if startFile == 8 {
+			return 0, fmt.Errorf("can't go east if on right edge")
+		}
+		return GetSquareFromRankAndFile(startRank-1, startFile+1), nil
+	case SOUTH:
+		if startRank == 0 {
+			return 0, fmt.Errorf("can't go south if on lower edge")
+		}
+		return GetSquareFromRankAndFile(startRank-1, startFile), nil
+	case SOUTHWEST:
+		if startRank == 0 {
+			return 0, fmt.Errorf("can't go south if on lower edge")
+		}
+		if startFile == 0 {
+			return 0, fmt.Errorf("can't go west if on left edge")
+		}
+		return GetSquareFromRankAndFile(startRank-1, startFile-1), nil
+	case WEST:
+		if startFile == 0 {
+			return 0, fmt.Errorf("can't go west if on left edge")
+		}
+		return GetSquareFromRankAndFile(startRank, startFile-1), nil
+	case NORTHWEST:
+		if startRank == 8 {
+			return 0, fmt.Errorf("can't go north if on upper edge")
+		}
+		if startFile == 0 {
+			return 0, fmt.Errorf("can't go west if on left edge")
+		}
+		return GetSquareFromRankAndFile(startRank+1, startFile-1), nil
+	}
+
+	panic(fmt.Sprintf("unhandled switch case: %d", d))
+}
+
 func (s Square) GetName() string {
 	var square Square = 1
 	for _, squareString := range SQUARE_STRINGS {
@@ -123,4 +214,8 @@ func GetSquareFromString(s string) Square {
 
 func GetSquareFromCoord(row, col int) Square {
 	return coordToSquare[row][col]
+}
+
+func GetSquareFromRankAndFile(rank, file int) Square {
+	return coordToSquare[8-rank][file-1]
 }

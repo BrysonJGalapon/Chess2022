@@ -95,18 +95,18 @@ func (p *Piece) IsValidMovement(srcSquare, dstSquare Square) error {
 				return nil
 			}
 		case PAWN:
-			startRow := srcSquare.GetRow()
-			startCol := srcSquare.GetCol()
+			startRank := srcSquare.GetRank()
+			startFile := srcSquare.GetFile()
 
-			endRow := dstSquare.GetRow()
-			endCol := dstSquare.GetCol()
+			endRank := dstSquare.GetRank()
+			endFile := dstSquare.GetFile()
 
-			if startCol == endCol && endRow == startRow+1 {
+			if startFile == endFile && endRank == startRank+1 {
 				// white pawns can move up 1 square
 				return nil
 			}
 
-			if srcSquare.GetRank() == 2 && endRow == startRow+2 {
+			if startFile == endFile && startRank == 2 && endRank == startRank+2 {
 				// if pawn is on 2nd rank, pawn can move up 2 squares
 				return nil
 			}
@@ -169,18 +169,18 @@ func (p *Piece) IsValidMovement(srcSquare, dstSquare Square) error {
 				return nil
 			}
 		case PAWN:
-			startRow := srcSquare.GetRow()
-			startCol := srcSquare.GetCol()
+			startRank := srcSquare.GetRank()
+			startFile := srcSquare.GetFile()
 
-			endRow := dstSquare.GetRow()
-			endCol := dstSquare.GetCol()
+			endRank := dstSquare.GetRank()
+			endFile := dstSquare.GetFile()
 
-			if startCol == endCol && endRow == startRow-1 {
+			if startFile == endFile && endRank == startRank-1 {
 				// black pawns can move down 1 square
 				return nil
 			}
 
-			if srcSquare.GetRank() == 7 && endRow == startRow-2 {
+			if startFile == endFile && startRank == 7 && endRank == startRank-2 {
 				// if pawn is on 7th rank, pawn can move down 2 squares
 				return nil
 			}
@@ -207,13 +207,13 @@ func (p *Piece) IsValidCapture(srcSquare, dstSquare Square) error {
 			// valid captures for [queen, bishop, knight, rook] are exact same as movement
 			return p.IsValidMovement(srcSquare, dstSquare)
 		case PAWN:
-			startRow := srcSquare.GetRow()
-			startCol := srcSquare.GetCol()
+			startRank := srcSquare.GetRank()
+			startFile := srcSquare.GetFile()
 
-			endRow := dstSquare.GetRow()
-			endCol := dstSquare.GetCol()
+			endRank := dstSquare.GetRank()
+			endFile := dstSquare.GetFile()
 
-			if Abs(endCol-startCol) == 1 && endRow == startRow+1 {
+			if Abs(endFile-startFile) == 1 && endRank == startRank+1 {
 				// white pawns can capture upward diagonally
 				return nil
 			}
@@ -233,13 +233,13 @@ func (p *Piece) IsValidCapture(srcSquare, dstSquare Square) error {
 			// valid captures for [queen, bishop, knight, rook] are exact same as movement
 			return p.IsValidMovement(srcSquare, dstSquare)
 		case PAWN:
-			startRow := srcSquare.GetRow()
-			startCol := srcSquare.GetCol()
+			startRank := srcSquare.GetRank()
+			startFile := srcSquare.GetFile()
 
-			endRow := dstSquare.GetRow()
-			endCol := dstSquare.GetCol()
+			endRank := dstSquare.GetRank()
+			endFile := dstSquare.GetFile()
 
-			if Abs(endCol-startCol) == 1 && endRow == startRow-1 {
+			if Abs(endFile-startFile) == 1 && endRank == startRank-1 {
 				// black pawns can capture downward diagonally
 				return nil
 			}

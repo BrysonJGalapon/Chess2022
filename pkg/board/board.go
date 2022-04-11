@@ -250,6 +250,28 @@ func (b *board) placePieceAt(p *Piece, s Square) *Piece {
 	}
 }
 
+func (b *board) isAnyPieceBetween(srcSquare, dstSquare Square) bool {
+	var curr Square = srcSquare
+	var dir Direction = srcSquare.DirectionTo(dstSquare)
+	var err error
+
+	for {
+		curr, _ = curr.Step(dir)
+
+		if curr == dstSquare {
+			break
+		}
+
+		_, err = b.getPieceAt(curr)
+		if err == nil {
+			// found a piece
+			return true
+		}
+	}
+
+	return false
+}
+
 func (b *board) IsValidMove(m Move) error {
 	var srcSquare, dstSquare Square
 	var srcPiece *Piece
@@ -276,13 +298,20 @@ func (b *board) IsValidMove(m Move) error {
 		return fmt.Errorf("%s can't move a piece onto another %s piece", b.GetTurn(), dstPiece.GetColor())
 	}
 
-	// check that the src piece is moving according to its movement set (e.g. a knight moves in L shape)
-	if srcPiece.IsValidMovement(srcSquare, dstSquare) != nil {
+	// check that the src piece is moving according to its movement or capture set (e.g. a knight moves in L shape, pawns capture diagonally)
+	if srcPiece.IsValidMovement(srcSquare, dstSquare) != nil && srcPiece.IsValidCapture(srcSquare, dstSquare) != nil {
 		return fmt.Errorf("move: %s falls outside of %s's movement or capture capabilities", m, srcPiece)
 	}
-	// if srcPiece.IsValidMovement(srcSquare, dstSquare) != nil && srcPiece.IsValidCapture(srcSquare, dstSquare) != nil {
-	// 	return fmt.Errorf("move: %s falls outside of %s's movement or capture capabilities", m, srcPiece)
-	// }
+
+	// if the src piece is not a knight, check that the src piece is not jumping over other pieces
+	if srcPiece.GetPieceType() != KNIGHT && b.isAnyPieceBetween(srcSquare, dstSquare) {
+		return fmt.Errorf("piece: %s can't move from %s to %s because it would jump over another piece", srcPiece, srcSquare, dstSquare)
+	}
+
+	// if the src piece is a pawn, and if the pawn is capturing a piece, check that the destination square either has a piece, or is the en-passent square
+	if srcPiece.GetPieceType() == PAWN && srcPiece.IsValidCapture(srcSquare, dstSquare) == nil && dstPiece == nil && dstSquare.ToBitMap() != b.enPassentBitMap {
+		return fmt.Errorf("pawn can't capture a piece that does not exist on the destination square, without en-passent")
+	}
 
 	// TODO
 	// 1. check that src pieces move according to their movement sets (e.g. a knight moves like a knight)
