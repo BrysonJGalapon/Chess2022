@@ -1,8 +1,11 @@
 package random_player
 
-import "time"
-import "math/rand"
-import b "galapb/chess2022/pkg/board"
+import (
+	"math/rand"
+	"time"
+
+	b "galapb/chess2022/pkg/board"
+)
 
 func init() {
 	rand.Seed(33423432)
@@ -31,6 +34,7 @@ func (rp *RandomPlayer) Start(board b.Board, quit chan bool) {
 			}
 
 			response := rp.getMove(board)
+			board.Make(response)
 
 			rp.response <- response
 		}
@@ -41,6 +45,13 @@ func (rp *RandomPlayer) getMove(board b.Board) b.Move {
 	srcSquare := b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
 	dstSquare := b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
 	move := b.NewMove(srcSquare, dstSquare).Build()
+
+	for board.IsValidMove(move) != nil {
+		srcSquare = b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+		dstSquare = b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+		move = b.NewMove(srcSquare, dstSquare).Build()
+	}
+
 	time.Sleep(3 * time.Second)
 	return move
 }

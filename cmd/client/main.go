@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"galapb/chess2022/pkg/board"
 	"galapb/chess2022/pkg/game"
 	"galapb/chess2022/pkg/players/player"
@@ -39,7 +40,7 @@ func main() {
 		move = <-whiteResponse
 
 		if err := game.GetBoard().Make(move); err != nil {
-			panic("invalid move by white")
+			panic(fmt.Sprintf("invalid move by white: %s", err))
 		}
 
 		log.Printf("White made move: %s", move)
@@ -49,7 +50,7 @@ func main() {
 		move = <-blackResponse
 
 		if err := game.GetBoard().Make(move); err != nil {
-			panic("invalid move by black")
+			panic(fmt.Sprintf("invalid move by black: %s", err))
 		}
 
 		log.Printf("Black made move: %s", move)

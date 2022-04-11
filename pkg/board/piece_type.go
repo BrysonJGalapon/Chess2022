@@ -13,8 +13,8 @@ const (
 	PAWN
 )
 
-func (pt *PieceType) String() string {
-	switch *pt {
+func (pt PieceType) String() string {
+	switch pt {
 	case KING:
 		return "KING"
 	case QUEEN:
@@ -29,5 +29,5 @@ func (pt *PieceType) String() string {
 		return "PAWN"
 	}
 
-	panic(fmt.Sprintf("Unhandled switch case: %d", *pt))
+	panic(fmt.Sprintf("Unhandled switch case: %d", pt))
 }

@@ -9,24 +9,24 @@ const (
 	BLACK
 )
 
-func (c *Color) String() string {
-	switch *c {
+func (c Color) String() string {
+	switch c {
 	case WHITE:
 		return "WHITE"
 	case BLACK:
 		return "BLACK"
 	}
 
-	panic(fmt.Sprintf("Unhandled switch case: %d", *c))
+	panic(fmt.Sprintf("Unhandled switch case: %d", c))
 }
 
-func (c *Color) Opposite() Color {
-	switch *c {
+func (c Color) Opposite() Color {
+	switch c {
 	case WHITE:
 		return BLACK
 	case BLACK:
 		return WHITE
 	}
 
-	panic(fmt.Sprintf("Unhandled switch case: %d", *c))
+	panic(fmt.Sprintf("Unhandled switch case: %d", c))
 }

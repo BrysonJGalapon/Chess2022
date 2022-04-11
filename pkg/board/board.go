@@ -10,6 +10,8 @@ type Board interface {
 
 	makeUnsafe(Move)
 	isValidPosition() error
+	toggleTurn()
+	isCheck() bool
 }
 
 type board struct {
@@ -195,6 +197,10 @@ func (b *board) makeUnsafe(m Move) {
 	}
 
 	// toggle the turn
+	b.toggleTurn()
+}
+
+func (b *board) toggleTurn() {
 	b.turn = b.turn.Opposite()
 }
 
@@ -241,18 +247,53 @@ func (b *board) placePieceAt(p *Piece, s Square) *Piece {
 }
 
 func (b *board) IsValidMove(m Move) error {
+	var srcSquare, dstSquare Square
+	var srcPiece *Piece
+	var dstPiece *Piece
+	var err error
+
+	srcSquare = m.GetSrcSquare()
+	dstSquare = m.GetDstSquare()
+
+	// check that a piece exists on the src square
+	srcPiece, err = b.getPieceAt(srcSquare)
+	if err != nil {
+		return fmt.Errorf("no piece on src square: %s", srcSquare.GetName())
+	}
+
+	// check that the piece being moved is the same color as the side to move
+	if srcPiece.GetColor() != b.GetTurn() {
+		return fmt.Errorf("%s can't move a piece with color %s", b.GetTurn(), srcPiece.GetColor())
+	}
+
+	// check that if there a piece on the destination square, that the captured piece's color is the opposite of the side to move
+	dstPiece, err = b.getPieceAt(dstSquare)
+	if err == nil && dstPiece.GetColor() == b.GetTurn() {
+		return fmt.Errorf("%s can't move a piece onto another %s piece", b.GetTurn(), dstPiece.GetColor())
+	}
+
 	bCopy := b.Copy()
 	bCopy.makeUnsafe(m)
 	return bCopy.isValidPosition()
 }
 
 func (b *board) isValidPosition() error {
-	// TODO
+	bCopy := b.Copy()
+	bCopy.toggleTurn()
+	if bCopy.isCheck() {
+		return fmt.Errorf("opponent king can't be in check")
+	}
+
+	// position passes all checks
 	return nil
 }
 
-func (b *board) Copy() Board {
+func (b *board) isCheck() bool {
 	// TODO
+	return false
+}
+
+func (b *board) Copy() Board {
 	return &board{
 		whiteKingBitMap:   b.whiteKingBitMap,
 		whiteQueenBitMap:  b.whiteQueenBitMap,
