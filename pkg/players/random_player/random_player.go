@@ -38,6 +38,9 @@ func (rp *RandomPlayer) Start(board b.Board, quit chan bool) {
 }
 
 func (rp *RandomPlayer) getMove(board b.Board) b.Move {
+	srcSquare := b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+	dstSquare := b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+	move := b.NewMove(srcSquare, dstSquare).Build()
 	time.Sleep(3 * time.Second)
-	return b.GetEmptyMove()
+	return move
 }

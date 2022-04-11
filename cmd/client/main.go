@@ -1,11 +1,13 @@
 package main
 
-import "log"
-import "galapb/chess2022/pkg/players/player"
-import "galapb/chess2022/pkg/players/random_player"
-import "galapb/chess2022/pkg/board"
-import "galapb/chess2022/pkg/game"
-import "galapb/chess2022/pkg/time_control"
+import (
+	"galapb/chess2022/pkg/board"
+	"galapb/chess2022/pkg/game"
+	"galapb/chess2022/pkg/players/player"
+	"galapb/chess2022/pkg/players/random_player"
+	"galapb/chess2022/pkg/time_control"
+	"log"
+)
 
 func main() {
 	// move channels
@@ -36,11 +38,19 @@ func main() {
 		whitePrompt <- move
 		move = <-whiteResponse
 
+		if err := game.GetBoard().Make(move); err != nil {
+			panic("invalid move by white")
+		}
+
 		log.Printf("White made move: %s", move)
 		log.Printf("Board:\n%s", game.GetBoard().String())
 
 		blackPrompt <- move
 		move = <-blackResponse
+
+		if err := game.GetBoard().Make(move); err != nil {
+			panic("invalid move by black")
+		}
 
 		log.Printf("Black made move: %s", move)
 		log.Printf("Board:\n%s", game.GetBoard().String())

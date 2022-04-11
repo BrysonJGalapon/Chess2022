@@ -7,6 +7,7 @@ type Move interface {
 	GetDstSquare() Square
 	GetPromotionPieceType() PieceType
 	AddPromotionPieceType(PieceType) Move
+	String() string
 	IsEmpty() bool
 }
 
@@ -38,6 +39,16 @@ func (m *move) AddPromotionPieceType(promotionPieceType PieceType) Move {
 
 func (m *move) IsEmpty() bool {
 	return false
+}
+
+func (m *move) String() string {
+	ret := "{"
+	ret += fmt.Sprintf("%s -> %s", m.srcSquare.GetName(), m.dstSquare.GetName())
+	if m.promotionPieceType != nil {
+		ret += fmt.Sprintf(" =%s", m.promotionPieceType.String())
+	}
+	ret += "}"
+	return ret
 }
 
 type MoveBuilder interface {
@@ -87,64 +98,10 @@ func (em *emptyMove) IsEmpty() bool {
 	return true
 }
 
+func (em *emptyMove) String() string {
+	return "{emptyMove}"
+}
+
 func GetEmptyMove() Move {
 	return &emptyMove{}
-}
-
-// castling move
-type castlingMove struct {
-	color Color
-	side  Side
-}
-
-func (cm *castlingMove) GetSrcSquare() Square {
-	switch cm.color {
-	case WHITE:
-		return GetSquareFromString("E1")
-	case BLACK:
-		return GetSquareFromString("E8")
-	}
-
-	panic(fmt.Sprintf("unhandled switch case: %s", cm))
-}
-
-func (cm *castlingMove) GetDstSquare() Square {
-	switch cm.color {
-	case WHITE:
-		switch cm.side {
-		case KINGSIDE:
-			return GetSquareFromString("F1")
-		case QUEENSIDE:
-			return GetSquareFromString("C1")
-		}
-	case BLACK:
-		switch cm.side {
-		case KINGSIDE:
-			return GetSquareFromString("F8")
-		case QUEENSIDE:
-			return GetSquareFromString("C8")
-		}
-	}
-
-	panic(fmt.Sprintf("unhandled switch case: %s", cm))
-}
-
-func (cm *castlingMove) GetPromotionPieceType() PieceType {
-	panic("can't call GetPromotionPieceType on castling move")
-}
-
-func (cm *castlingMove) IsEmpty() bool {
-	return false
-}
-
-func (cm *castlingMove) AddPromotionPieceType(promotionPieceType PieceType) Move {
-	panic("can't call GetPromotionPieceType on castling move")
-}
-
-func (cm *castlingMove) String() string {
-	return fmt.Sprintf("{color: %d, side: %d}", cm.color, cm.side)
-}
-
-func GetCastlingMove(color Color, side Side) Move {
-	return &castlingMove{color, side}
 }

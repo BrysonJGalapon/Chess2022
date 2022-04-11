@@ -1,5 +1,7 @@
 package board
 
+import "fmt"
+
 type Square uint64
 
 var SQUARE_STRINGS [64]string = [64]string{
@@ -13,18 +15,8 @@ var SQUARE_STRINGS [64]string = [64]string{
 	"A1", "B1", "C1", "D1", "E1", "F1", "G1", "H1",
 }
 
-var coordToSquare [8][8]Square = [8][8]Square{
-	[8]Square{},
-	[8]Square{},
-	[8]Square{},
-	[8]Square{},
-	[8]Square{},
-	[8]Square{},
-	[8]Square{},
-	[8]Square{},
-}
+var coordToSquare [8][8]Square = [8][8]Square{{}, {}, {}, {}, {}, {}, {}, {}}
 var stringToSquare map[string]Square = make(map[string]Square)
-
 var squareToBitMap map[Square]BitMap = make(map[Square]BitMap)
 
 func init() {
@@ -67,7 +59,8 @@ func (s *Square) GetY() int {
 }
 
 func (s *Square) ToBitMap() BitMap {
-	return squareToBitMap[*s]
+	ret := squareToBitMap[*s]
+	return ret
 }
 
 func (s *Square) String() string {
@@ -90,6 +83,22 @@ func (s *Square) String() string {
 	return ret
 }
 
+func (s *Square) GetName() string {
+	var square Square = 1
+	for _, squareString := range SQUARE_STRINGS {
+		if *s == square {
+			return squareString
+		}
+		square <<= 1
+	}
+
+	panic(fmt.Sprintf("could not find name for square: %d", s))
+}
+
 func GetSquareFromString(s string) Square {
 	return stringToSquare[s]
+}
+
+func GetSquareFromCoord(row, col int) Square {
+	return coordToSquare[row][col]
 }

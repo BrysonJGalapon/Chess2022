@@ -4,8 +4,12 @@ import "fmt"
 
 type Board interface {
 	Make(Move) error
+	IsValidMove(Move) error
 	Copy() Board
 	String() string
+
+	makeUnsafe(Move)
+	isValidPosition() error
 }
 
 type board struct {
@@ -28,9 +32,12 @@ type board struct {
 
 	// castling rights
 	whiteKingside  bool
-	whieQueenside  bool
+	whiteQueenside bool
 	blackKingside  bool
 	blackQueenSide bool
+
+	// turn
+	turn Color
 }
 
 func (b *board) getPieceBitmap(color Color, pieceType PieceType) BitMap {
@@ -70,6 +77,55 @@ func (b *board) getPieceBitmap(color Color, pieceType PieceType) BitMap {
 	panic(fmt.Sprintf("Unhandled switch case: %s, %s", color.String(), pieceType.String()))
 }
 
+func (b *board) setPieceBitmap(color Color, pieceType PieceType, bitmap BitMap) {
+	switch color {
+	case WHITE:
+		switch pieceType {
+		case KING:
+			b.whiteKingBitMap = bitmap
+			return
+		case QUEEN:
+			b.whiteQueenBitMap = bitmap
+			return
+		case BISHOP:
+			b.whiteBishopBitMap = bitmap
+			return
+		case KNIGHT:
+			b.whiteKnightBitMap = bitmap
+			return
+		case ROOK:
+			b.whiteRookBitMap = bitmap
+			return
+		case PAWN:
+			b.whitePawnBitMap = bitmap
+			return
+		}
+	case BLACK:
+		switch pieceType {
+		case KING:
+			b.blackKingBitMap = bitmap
+			return
+		case QUEEN:
+			b.blackQueenBitMap = bitmap
+			return
+		case BISHOP:
+			b.blackBishopBitMap = bitmap
+			return
+		case KNIGHT:
+			b.blackKnightBitMap = bitmap
+			return
+		case ROOK:
+			b.blackRookBitMap = bitmap
+			return
+		case PAWN:
+			b.blackPawnBitMap = bitmap
+			return
+		}
+	}
+
+	panic(fmt.Sprintf("Unhandled switch case: %s, %s", color.String(), pieceType.String()))
+}
+
 func (b *board) getPieceAt(square Square) (*Piece, error) {
 	var bitmap BitMap = square.ToBitMap()
 
@@ -103,19 +159,123 @@ func (b *board) getPieceAt(square Square) (*Piece, error) {
 	return nil, fmt.Errorf("no piece at square: %d", square)
 }
 
+func (b *board) GetTurn() Color {
+	return b.turn
+}
+
 func (b *board) Make(m Move) error {
 	// Do nothing on empty move
 	if m.IsEmpty() {
 		return nil
 	}
 
+	if err := b.IsValidMove(m); err != nil {
+		return err
+	}
+
+	b.makeUnsafe(m)
+	return nil
+}
+
+func (b *board) makeUnsafe(m Move) {
+	// Do nothing on empty move
+	if m.IsEmpty() {
+		return
+	}
+
+	var srcSquare, dstSquare Square
+	var piece *Piece
+
+	srcSquare = m.GetSrcSquare()
+	dstSquare = m.GetDstSquare()
+
+	piece = b.pickUpPieceAt(srcSquare)
+	if piece != nil {
+		b.placePieceAt(piece, dstSquare)
+	}
+
+	// toggle the turn
+	b.turn = b.turn.Opposite()
+}
+
+func (b *board) pickUpPieceAt(s Square) *Piece {
+	piece, err := b.getPieceAt(s)
+	if err != nil {
+		// no piece on the square, do nothing and return nothing
+		return nil
+	}
+
+	color := piece.GetColor()
+	pieceType := piece.GetPieceType()
+
+	bitmap := b.getPieceBitmap(color, pieceType)
+	bitmap = bitmap &^ (s.ToBitMap()) // removes the bit that square represents from the bitmap, if it exists
+	b.setPieceBitmap(color, pieceType, bitmap)
+
+	return piece
+}
+
+func (b *board) placePieceAt(p *Piece, s Square) *Piece {
+	pieceOriginallyAtSqaure, err := b.getPieceAt(s)
+	if err == nil {
+		// update the bitmap of the removed piece
+		pieceOriginallyAtSqaureColor := pieceOriginallyAtSqaure.GetColor()
+		pieceOriginallyAtSqaurePieceType := pieceOriginallyAtSqaure.GetPieceType()
+		bitmap := b.getPieceBitmap(pieceOriginallyAtSqaureColor, pieceOriginallyAtSqaurePieceType)
+		bitmap = bitmap &^ (s.ToBitMap()) // removes the bit that square represents from the bitmap, if it exists
+		b.setPieceBitmap(pieceOriginallyAtSqaureColor, pieceOriginallyAtSqaurePieceType, bitmap)
+	}
+
+	// update the bitmap of the added piece
+	pieceColor := p.GetColor()
+	piecePieceType := p.GetPieceType()
+	bitmap := b.getPieceBitmap(pieceColor, piecePieceType)
+	bitmap = bitmap | (s.ToBitMap()) // adds the bit that square represents to the bitmap
+	b.setPieceBitmap(pieceColor, piecePieceType, bitmap)
+
+	if err != nil {
+		return nil
+	} else {
+		return pieceOriginallyAtSqaure
+	}
+}
+
+func (b *board) IsValidMove(m Move) error {
+	bCopy := b.Copy()
+	bCopy.makeUnsafe(m)
+	return bCopy.isValidPosition()
+}
+
+func (b *board) isValidPosition() error {
 	// TODO
 	return nil
 }
 
 func (b *board) Copy() Board {
 	// TODO
-	return &board{}
+	return &board{
+		whiteKingBitMap:   b.whiteKingBitMap,
+		whiteQueenBitMap:  b.whiteQueenBitMap,
+		whiteBishopBitMap: b.whiteBishopBitMap,
+		whiteKnightBitMap: b.whiteKnightBitMap,
+		whiteRookBitMap:   b.whiteRookBitMap,
+		whitePawnBitMap:   b.whitePawnBitMap,
+		blackKingBitMap:   b.blackKingBitMap,
+		blackQueenBitMap:  b.blackQueenBitMap,
+		blackBishopBitMap: b.blackBishopBitMap,
+		blackKnightBitMap: b.blackKnightBitMap,
+		blackRookBitMap:   b.blackRookBitMap,
+		blackPawnBitMap:   b.blackPawnBitMap,
+
+		enPassentBitMap: b.enPassentBitMap,
+
+		whiteKingside:  b.whiteKingside,
+		whiteQueenside: b.whiteQueenside,
+		blackKingside:  b.blackKingside,
+		blackQueenSide: b.blackQueenSide,
+
+		turn: b.turn,
+	}
 }
 
 func (b *board) String() string {
@@ -156,14 +316,14 @@ func Standard() Board {
 		blackRookBitMap:   129,
 		blackPawnBitMap:   65280,
 
-		// en passent square
 		enPassentBitMap: 0,
 
-		// castling rights
 		whiteKingside:  true,
-		whieQueenside:  true,
+		whiteQueenside: true,
 		blackKingside:  true,
 		blackQueenSide: true,
+
+		turn: WHITE,
 	}
 }
 
