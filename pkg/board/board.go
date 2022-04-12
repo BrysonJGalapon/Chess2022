@@ -230,14 +230,36 @@ func (b *board) setTurn(color Color) {
 	b.turn = color
 }
 
-func (b *board) isCheckmate() bool {
-	// TODO
+func (b *board) isAnyMoveValid() bool {
+	var srcSquare Square = 1
+	var dstSquare Square = 1
+	var move Move
+
+	for i := 0; i < 64; i++ {
+		dstSquare = 1
+
+		for j := 0; j < 64; j++ {
+			move = NewMove(srcSquare, dstSquare).PromotionPieceType(QUEEN).Build()
+
+			if err := b.IsValidMove(move); err == nil {
+				return true
+			}
+
+			dstSquare <<= 1
+		}
+
+		srcSquare <<= 1
+	}
+
 	return false
 }
 
+func (b *board) isCheckmate() bool {
+	return b.isCheck() && !b.isAnyMoveValid()
+}
+
 func (b *board) isStalemate() bool {
-	// TODO
-	return false
+	return !b.isCheck() && !b.isAnyMoveValid()
 }
 
 func (b *board) isInsufficientMaterial() bool {
@@ -458,13 +480,10 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Printf("A")
 			return true
 		case piece.GetPieceType() == ROOK:
-			// log.Println("B")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("C")
 			return true
 		}
 	}
@@ -474,16 +493,12 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Println("D")
 			return true
 		case piece.GetPieceType() == BISHOP:
-			// log.Println("E")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("F")
 			return true
 		case myColor == WHITE && piece.GetPieceType() == PAWN && steps == 1:
-			// log.Println("G")
 			return true
 		}
 	}
@@ -493,13 +508,10 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Println("H")
 			return true
 		case piece.GetPieceType() == ROOK:
-			// log.Println("I")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("J")
 			return true
 		}
 	}
@@ -509,16 +521,12 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Println("K")
 			return true
 		case piece.GetPieceType() == BISHOP:
-			// log.Println("L")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("M")
 			return true
 		case myColor == BLACK && piece.GetPieceType() == PAWN && steps == 1:
-			// log.Println("N")
 			return true
 		}
 	}
@@ -528,13 +536,10 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Println("O")
 			return true
 		case piece.GetPieceType() == ROOK:
-			// log.Println("P")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("Q")
 			return true
 		}
 	}
@@ -544,16 +549,12 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Println("R")
 			return true
 		case piece.GetPieceType() == BISHOP:
-			// log.Println("S")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("T")
 			return true
 		case myColor == BLACK && piece.GetPieceType() == PAWN && steps == 1:
-			// log.Println("U")
 			return true
 		}
 	}
@@ -563,13 +564,10 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Println("V")
 			return true
 		case piece.GetPieceType() == ROOK:
-			// log.Println("W")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("X")
 			return true
 		}
 	}
@@ -579,16 +577,12 @@ func (b *board) isCheck() bool {
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
-			// log.Println("Y")
 			return true
 		case piece.GetPieceType() == BISHOP:
-			// log.Println("Z")
 			return true
 		case piece.GetPieceType() == KING && steps == 1:
-			// log.Println("a")
 			return true
 		case myColor == WHITE && piece.GetPieceType() == PAWN && steps == 1:
-			// log.Println("b")
 			return true
 		}
 	}

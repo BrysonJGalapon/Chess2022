@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	rand.Seed(36)
+	rand.Seed(369)
 }
 
 type RandomPlayer struct {
