@@ -13,7 +13,6 @@ type Game interface {
 	GetBlackPlayer() player.Player
 	GetBoard() board.Board
 	GetResult() (Result, Reason)
-	IsOver() bool
 }
 
 type GameBuilder interface {
@@ -47,11 +46,6 @@ func (g *game) GetBoard() board.Board {
 func (g *game) Board(board board.Board) GameBuilder {
 	g.board = board
 	return g
-}
-
-func (g *game) IsOver() bool {
-	// TODO
-	return false
 }
 
 func (g *game) Build() Game {

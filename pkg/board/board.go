@@ -380,12 +380,12 @@ func (b *board) isInsufficientMaterial() bool {
 }
 
 func (b *board) isFiftyMoveRule() bool {
-	// TODO
+	// TODO fifty movee rule
 	return false
 }
 
 func (b *board) isThreefoldRepetition() bool {
-	// TODO
+	// TODO threefold repetition
 	return false
 }
 
@@ -876,9 +876,4 @@ func Standard() Board {
 
 		ply: 0,
 	}
-}
-
-func GetBoardFromString(s string) Board {
-	// TODO
-	return &board{}
 }
