@@ -15,3 +15,12 @@ func Pow2(x int) int {
 func Xor(b1, b2 bool) bool {
 	return (b1 && !b2) || (!b1 && b2)
 }
+
+func NumSetBits(n int) int {
+	count := 0
+	for n != 0 {
+		count += n & 1
+		n >>= 1
+	}
+	return count
+}

@@ -71,8 +71,7 @@ func (s Square) GetFile() int {
 }
 
 func (s Square) ToBitMap() BitMap {
-	ret := squareToBitMap[s]
-	return ret
+	return squareToBitMap[s]
 }
 
 func (s Square) DistanceSquaredTo(o Square) int {
@@ -158,7 +157,7 @@ func (s Square) Step(d Direction) (Square, error) {
 		}
 		return GetSquareFromRankAndFile(startRank, startFile+1), nil
 	case SOUTHEAST:
-		if startRank == 0 {
+		if startRank == 1 {
 			return 0, fmt.Errorf("can't go south if on lower edge")
 		}
 		if startFile == 8 {
@@ -166,20 +165,20 @@ func (s Square) Step(d Direction) (Square, error) {
 		}
 		return GetSquareFromRankAndFile(startRank-1, startFile+1), nil
 	case SOUTH:
-		if startRank == 0 {
+		if startRank == 1 {
 			return 0, fmt.Errorf("can't go south if on lower edge")
 		}
 		return GetSquareFromRankAndFile(startRank-1, startFile), nil
 	case SOUTHWEST:
-		if startRank == 0 {
+		if startRank == 1 {
 			return 0, fmt.Errorf("can't go south if on lower edge")
 		}
-		if startFile == 0 {
+		if startFile == 1 {
 			return 0, fmt.Errorf("can't go west if on left edge")
 		}
 		return GetSquareFromRankAndFile(startRank-1, startFile-1), nil
 	case WEST:
-		if startFile == 0 {
+		if startFile == 1 {
 			return 0, fmt.Errorf("can't go west if on left edge")
 		}
 		return GetSquareFromRankAndFile(startRank, startFile-1), nil
@@ -187,7 +186,7 @@ func (s Square) Step(d Direction) (Square, error) {
 		if startRank == 8 {
 			return 0, fmt.Errorf("can't go north if on upper edge")
 		}
-		if startFile == 0 {
+		if startFile == 1 {
 			return 0, fmt.Errorf("can't go west if on left edge")
 		}
 		return GetSquareFromRankAndFile(startRank+1, startFile-1), nil
