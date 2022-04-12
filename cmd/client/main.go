@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"galapb/chess2022/pkg/board"
 	"galapb/chess2022/pkg/game"
+	"galapb/chess2022/pkg/players/interactive_player"
 	"galapb/chess2022/pkg/players/player"
 	"galapb/chess2022/pkg/players/random_player"
 	"galapb/chess2022/pkg/time_control"
@@ -18,7 +19,7 @@ func main() {
 	var blackResponse chan board.Move = make(chan board.Move, 1)
 
 	// build the players
-	var whitePlayer player.Player = random_player.New(whitePrompt, whiteResponse)
+	var whitePlayer player.Player = interactive_player.New(whitePrompt, whiteResponse)
 	var blackPlayer player.Player = random_player.New(blackPrompt, blackResponse)
 
 	// quit channels
@@ -44,6 +45,8 @@ func main() {
 			break
 		}
 
+		log.Printf("Board:\n%s", g.GetBoard().String())
+
 		whitePrompt <- move
 		move = <-whiteResponse
 
@@ -67,7 +70,6 @@ func main() {
 		}
 
 		log.Printf("Black made move: %s", move)
-		log.Printf("Board:\n%s", g.GetBoard().String())
 	}
 
 	// print results of the game

@@ -211,6 +211,11 @@ func GetSquareFromString(s string) Square {
 	return stringToSquare[s]
 }
 
+func GetSquareFromStringNotExistsOkay(s string) (Square, bool) {
+	square, ok := stringToSquare[s]
+	return square, ok
+}
+
 func GetSquareFromCoord(row, col int) Square {
 	return coordToSquare[row][col]
 }
