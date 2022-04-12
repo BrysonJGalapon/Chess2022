@@ -5,7 +5,7 @@ import "fmt"
 type PieceType uint8
 
 const (
-	KING PieceType = iota
+	KING PieceType = iota + 1
 	QUEEN
 	KNIGHT
 	BISHOP
@@ -51,4 +51,23 @@ func (pt PieceType) String() string {
 	}
 
 	panic(fmt.Sprintf("Unhandled switch case: %d", pt))
+}
+
+func NewPieceTypeFromString(s string) (PieceType, error) {
+	switch s {
+	case "Q":
+		return QUEEN, nil
+	case "N":
+		return KNIGHT, nil
+	case "B":
+		return BISHOP, nil
+	case "R":
+		return ROOK, nil
+	case "K":
+		return KING, nil
+	case "P":
+		return PAWN, nil
+	}
+
+	return 0, fmt.Errorf("no piece type associated to: %s", s)
 }

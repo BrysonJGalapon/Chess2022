@@ -39,19 +39,21 @@ func (ip *InteractivePlayer) Start(board b.Board, quit chan bool) {
 }
 
 func (rp *InteractivePlayer) getMove(board b.Board) b.Move {
-	// get move from user
-
 	var srcSquare b.Square
 	var dstSquare b.Square
 	var ok bool
+	var pieceType b.PieceType
+	var err error
 
 	for {
+		// get move from user
 		fmt.Printf("> Enter your move: ")
 		in := bufio.NewReader(os.Stdin)
 
 		moveString, _ := in.ReadString('\n')
 		words := strings.Fields(moveString)
 
+		// validity checking
 		if len(words) != 2 && len(words) != 3 {
 			fmt.Printf("\t%s is not a valid move. Try again... \n", moveString)
 			continue
@@ -67,7 +69,17 @@ func (rp *InteractivePlayer) getMove(board b.Board) b.Move {
 			continue
 		}
 
+		// build the move
 		move := b.NewMove(srcSquare, dstSquare).Build()
+
+		if len(words) == 3 {
+			if pieceType, err = b.NewPieceTypeFromString(words[2]); err != nil {
+				fmt.Printf("\t%s is not a valid piece type. Try again... \n", words[2])
+				continue
+			}
+
+			move = move.AddPromotionPieceType(pieceType)
+		}
 
 		if err := board.IsValidMove(move); err != nil {
 			fmt.Printf("\t%s is not a valid move. Error: %s. Try again... \n", move, err)
