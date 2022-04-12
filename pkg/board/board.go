@@ -230,9 +230,82 @@ func (b *board) setTurn(color Color) {
 	b.turn = color
 }
 
-func (b *board) GetStatus() Status {
+func (b *board) isCheckmate() bool {
 	// TODO
-	return UNDETERMINED
+	return false
+}
+
+func (b *board) isStalemate() bool {
+	// TODO
+	return false
+}
+
+func (b *board) isInsufficientMaterial() bool {
+	numWhiteQueens := NumSetBits(b.whiteQueenBitMap)
+	numWhiteBishops := NumSetBits(b.whiteBishopBitMap)
+	numWhiteKnights := NumSetBits(b.whiteKnightBitMap)
+	numWhiteRooks := NumSetBits(b.whiteRookBitMap)
+	numWhitePawns := NumSetBits(b.whitePawnBitMap)
+
+	numBlackQueens := NumSetBits(b.blackQueenBitMap)
+	numBlackBishops := NumSetBits(b.blackBishopBitMap)
+	numBlackKnights := NumSetBits(b.blackKnightBitMap)
+	numBlackRooks := NumSetBits(b.blackRookBitMap)
+	numBlackPawns := NumSetBits(b.blackPawnBitMap)
+
+	if numWhiteQueens > 0 || numWhiteRooks > 0 || numWhitePawns > 0 || numBlackQueens > 0 || numBlackRooks > 0 || numBlackPawns > 0 {
+		// not insufficient material if there is at least one queen, rook, or pawn
+		return false
+	}
+
+	// king v king
+	isKingVersusKing := numWhiteBishops == 0 && numWhiteKnights == 0 && numBlackBishops == 0 && numBlackKnights == 0
+	if isKingVersusKing {
+		return true
+	}
+
+	// king v king+bishop
+	isKingVersusKingAndBishop := numWhiteKnights == 0 && numBlackKnights == 0 && ((numWhiteBishops == 1 && numBlackBishops == 0) || (numWhiteBishops == 0 && numBlackBishops == 1))
+	if isKingVersusKingAndBishop {
+		return true
+	}
+
+	// king v king+knight
+	isKingVersusKingAndKnight := numWhiteBishops == 0 && numBlackBishops == 0 && ((numWhiteKnights == 1 && numBlackKnights == 0) || (numWhiteKnights == 0 && numBlackKnights == 1))
+	if isKingVersusKingAndKnight {
+		return true
+	}
+
+	// TODO add king+bishop(s) v king+bishop(s) where all bishops are on same color complex
+
+	return false
+}
+
+func (b *board) isFiftyMoveRule() bool {
+	// TODO
+	return false
+}
+
+func (b *board) isThreefoldRepetition() bool {
+	// TODO
+	return false
+}
+
+func (b *board) GetStatus() Status {
+	switch {
+	case b.isInsufficientMaterial():
+		return INSUFFICIENT_MATERIAL
+	case b.isCheckmate():
+		return CHECKMATE
+	case b.isStalemate():
+		return STALEMATE
+	case b.isFiftyMoveRule():
+		return FIFTY_MOVE_RULE
+	case b.isThreefoldRepetition():
+		return THREEFOLD_REPETITION
+	default:
+		return UNDETERMINED
+	}
 }
 
 func (b *board) pickUpPieceAt(s Square) *Piece {
