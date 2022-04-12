@@ -5,8 +5,8 @@ import (
 	"galapb/chess2022/pkg/board"
 	"galapb/chess2022/pkg/game"
 	"galapb/chess2022/pkg/players/interactive_player"
+	"galapb/chess2022/pkg/players/minimax_player"
 	"galapb/chess2022/pkg/players/player"
-	"galapb/chess2022/pkg/players/random_player"
 	"galapb/chess2022/pkg/time_control"
 	"log"
 )
@@ -20,7 +20,7 @@ func main() {
 
 	// build the players
 	var whitePlayer player.Player = interactive_player.New(whitePrompt, whiteResponse)
-	var blackPlayer player.Player = random_player.New(blackPrompt, blackResponse)
+	var blackPlayer player.Player = minimax_player.New(blackPrompt, blackResponse)
 
 	// quit channels
 	var whiteQuit chan bool = make(chan bool)

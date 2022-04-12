@@ -13,6 +13,7 @@ type Board interface {
 	GetPly() int
 	GetStatus() Status
 	GetTurn() Color
+	GetNumOf(c Color, pt PieceType) int
 
 	makeUnsafe(Move)
 	toggleTurn()
@@ -330,12 +331,49 @@ func (b *board) isAnyMoveValid() bool {
 	return false
 }
 
-func (b *board) isCheckmate() bool {
+func (b *board) IsCheckmate() bool {
 	return b.isCheck() && !b.isAnyMoveValid()
 }
 
-func (b *board) isStalemate() bool {
+func (b *board) IsStalemate() bool {
 	return !b.isCheck() && !b.isAnyMoveValid()
+}
+
+func (b *board) GetNumOf(c Color, pt PieceType) int {
+	switch c {
+	case WHITE:
+		switch pt {
+		case KING:
+			return NumSetBits(b.whiteKingBitMap)
+		case QUEEN:
+			return NumSetBits(b.whiteQueenBitMap)
+		case BISHOP:
+			return NumSetBits(b.whiteBishopBitMap)
+		case KNIGHT:
+			return NumSetBits(b.whiteKnightBitMap)
+		case ROOK:
+			return NumSetBits(b.whiteRookBitMap)
+		case PAWN:
+			return NumSetBits(b.whitePawnBitMap)
+		}
+	case BLACK:
+		switch pt {
+		case KING:
+			return NumSetBits(b.blackKingBitMap)
+		case QUEEN:
+			return NumSetBits(b.blackQueenBitMap)
+		case BISHOP:
+			return NumSetBits(b.blackBishopBitMap)
+		case KNIGHT:
+			return NumSetBits(b.blackKnightBitMap)
+		case ROOK:
+			return NumSetBits(b.blackRookBitMap)
+		case PAWN:
+			return NumSetBits(b.blackPawnBitMap)
+		}
+	}
+
+	panic(fmt.Sprintf("Unhandled switch case: %s, %s", c, pt))
 }
 
 func (b *board) isInsufficientMaterial() bool {
@@ -393,9 +431,9 @@ func (b *board) GetStatus() Status {
 	switch {
 	case b.isInsufficientMaterial():
 		return INSUFFICIENT_MATERIAL
-	case b.isCheckmate():
+	case b.IsCheckmate():
 		return CHECKMATE
-	case b.isStalemate():
+	case b.IsStalemate():
 		return STALEMATE
 	case b.isFiftyMoveRule():
 		return FIFTY_MOVE_RULE
