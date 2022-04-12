@@ -22,6 +22,14 @@ var squareToCoord map[Square][2]int = make(map[Square][2]int)
 var stringToSquare map[string]Square = make(map[string]Square)
 var squareToBitMap map[Square]BitMap = make(map[Square]BitMap)
 
+// keep track of corner squares
+var (
+	A1_SQUARE Square
+	A8_SQUARE Square
+	H1_SQUARE Square
+	H8_SQUARE Square
+)
+
 func init() {
 	var square Square
 	var bitmap BitMap
@@ -50,6 +58,11 @@ func init() {
 			bitmap <<= 1
 		}
 	}
+
+	A1_SQUARE = GetSquareFromString("A1")
+	A8_SQUARE = GetSquareFromString("A8")
+	H1_SQUARE = GetSquareFromString("H1")
+	H8_SQUARE = GetSquareFromString("H8")
 }
 
 func (s Square) GetRow() int {
@@ -205,6 +218,12 @@ func (s Square) GetName() string {
 	}
 
 	panic(fmt.Sprintf("could not find name for square: %d", s))
+}
+
+func (s Square) IsOnLeftOrRightEdge() bool {
+	file := s.GetFile()
+
+	return file == 1 || file == 8
 }
 
 func GetSquareFromString(s string) Square {

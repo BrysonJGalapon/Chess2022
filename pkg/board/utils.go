@@ -8,6 +8,14 @@ func Abs(x int) int {
 	}
 }
 
+func Max(x, y int) int {
+	if x >= y {
+		return x
+	} else {
+		return y
+	}
+}
+
 func Pow2(x int) int {
 	return x * x
 }
@@ -25,4 +33,13 @@ func NumSetBits(n BitMap) int {
 		n >>= 1
 	}
 	return count
+}
+
+func NumSteps(srcSquare, dstSquare Square) int {
+	startRow := srcSquare.GetRow()
+	startCol := srcSquare.GetCol()
+	endRow := dstSquare.GetRow()
+	endCol := dstSquare.GetCol()
+
+	return Max(Abs(endRow-startRow), Abs(endCol-startCol))
 }

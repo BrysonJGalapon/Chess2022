@@ -47,6 +47,7 @@ type board struct {
 	// turn
 	turn Color
 
+	// ply
 	ply int
 }
 
@@ -222,14 +223,52 @@ func (b *board) makeUnsafe(m Move) {
 		}
 
 		b.pickUpPieceAt(capturedPawnSquare)
+	case piece.GetPieceType() == KING && srcSquare.DistanceSquaredTo(dstSquare) == 4:
+		// castling moves
+		directionToRook := srcSquare.DirectionTo(dstSquare)
+		rookEndSquare, _ := srcSquare.Step(directionToRook) // rook ends up on square between srcSquare and dstSquare
+		_, rookStartSquare := b.getClosestPieceInDirection(srcSquare, directionToRook)
+
+		rook := b.pickUpPieceAt(rookStartSquare)
+		b.placePieceAt(rook, rookEndSquare)
+		b.placePieceAt(piece, dstSquare)
 	default:
 		// normal moves
 		b.placePieceAt(piece, dstSquare)
 	}
 
+	b.updateCastlingRights(piece, srcSquare)
 	b.updateEnPassentBitmap(m)
 	b.toggleTurn()
 	b.incrementPly()
+}
+
+func (b *board) updateCastlingRights(p *Piece, s Square) {
+	switch p.GetPieceType() {
+	case KING:
+		// moving the king revokes castling rights
+		if p.GetColor() == WHITE {
+			b.whiteKingside = false
+			b.whiteQueenside = false
+		} else {
+			b.blackKingside = false
+			b.blackQueenSide = false
+		}
+	case ROOK:
+		switch s {
+		case H1_SQUARE:
+			b.whiteKingside = false // a rook moved from H1, revoke white kingside castling rights
+		case A1_SQUARE:
+			b.whiteQueenside = false // a rook moved from A1, revoke white queenside castling rights
+		case H8_SQUARE:
+			b.blackKingside = false // a rook moved from H8, revoke black kingside castling rights
+		case A8_SQUARE:
+			b.blackQueenSide = false // a rook moved from A8, revoke black queenside castling rights
+		}
+	default:
+		// castling rights are not affected by non-king or non-rook moves
+		return
+	}
 }
 
 func (b *board) updateEnPassentBitmap(m Move) {
@@ -464,7 +503,7 @@ func (b *board) IsValidMove(m Move) error {
 
 	// if the src piece is not a knight, check that the src piece is not jumping over other pieces
 	if srcPiece.GetPieceType() != KNIGHT && b.isAnyPieceBetween(srcSquare, dstSquare) {
-		return fmt.Errorf("piece: %s can't move from %s to %s because it would jump over another piece", srcPiece, srcSquare, dstSquare)
+		return fmt.Errorf("piece: %s can't move from %s to %s because it would jump over another piece", srcPiece, srcSquare.GetName(), dstSquare.GetName())
 	}
 
 	// if the src piece is a pawn, and if the pawn is capturing a piece, check that the destination square either has a piece, or is the en-passent square
@@ -482,12 +521,44 @@ func (b *board) IsValidMove(m Move) error {
 		return fmt.Errorf("pawn can't enter 1st or 8th rank without promoting to a valid piece")
 	}
 
-	// TODO
-	// 1. check that src pieces move according to their movement sets (e.g. a knight moves like a knight)
-	// 2. en passent?
-	// 3. castling (through, into, out-of)
+	// if the src piece is a king, and if the king is trying to castle...
+	if srcPiece.GetPieceType() == KING && srcSquare.DistanceSquaredTo(dstSquare) == 4 {
+		castlingDirection := srcSquare.DirectionTo(dstSquare)
 
-	// check that the resulting position does not put the current king in check
+		// ..check that the king has castling rights on that side of the board
+		if !b.isCastlingAllowed(b.GetTurn(), srcSquare, dstSquare) {
+			return fmt.Errorf("king is not allowed to castle on that side of the board")
+		}
+
+		// ..check that all squares between the rook and king are empty
+		piece, pieceSquare := b.getClosestPieceInDirection(srcSquare, castlingDirection)
+		if piece == nil {
+			return fmt.Errorf("king can't castle in a direction where there is no rook")
+		}
+
+		if !pieceSquare.IsOnLeftOrRightEdge() {
+			return fmt.Errorf("king can't castle in a direction where squares between the king and the corner are not empty")
+		}
+
+		if piece.GetPieceType() != ROOK {
+			return fmt.Errorf("king can't castle in a direction where is no rook")
+		}
+
+		// ..check that king is not castling 'out of', or 'through' check ('into' check case is captured by the last validation of this function)
+		if b.isCheck() {
+			return fmt.Errorf("king can't castle out of check")
+		}
+
+		bCopy := b.Copy()
+		kingStartSquare := srcSquare
+		kingEndSquare, _ := srcSquare.Step(castlingDirection)
+		bCopy.makeUnsafe(NewMove(kingStartSquare, kingEndSquare).Build())
+		if bCopy.isCheck() {
+			return fmt.Errorf("king can't castle through check")
+		}
+	}
+
+	// check that the resulting position does not put the current king in check (includes 'into' check castling case)
 	bCopy := b.Copy()
 	bCopy.makeUnsafe(m)
 	bCopy.setTurn(b.GetTurn())
@@ -499,10 +570,29 @@ func (b *board) IsValidMove(m Move) error {
 	return nil
 }
 
+func (b *board) isCastlingAllowed(c Color, srcSquare, dstSquare Square) bool {
+	switch c {
+	case WHITE:
+		if dstSquare.GetFile() > srcSquare.GetFile() {
+			return b.whiteKingside
+		} else {
+			return b.whiteQueenside
+		}
+	case BLACK:
+		if dstSquare.GetFile() > srcSquare.GetFile() {
+			return b.blackKingside
+		} else {
+			return b.blackQueenSide
+		}
+	}
+
+	panic(fmt.Sprintf("Unhandled switch case: %s", c))
+}
+
 func (b *board) isCheck() bool {
 	var square Square
 	var piece *Piece
-	var steps int
+	var pieceSquare Square
 	var myColor Color = b.GetTurn()
 	var oppColor Color = myColor.Opposite()
 
@@ -513,113 +603,113 @@ func (b *board) isCheck() bool {
 	}
 
 	// look north
-	piece, steps = b.getClosestPieceInDirection(square, NORTH)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, NORTH)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == ROOK:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
 
 	// look northeast
-	piece, steps = b.getClosestPieceInDirection(square, NORTHEAST)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, NORTHEAST)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == BISHOP:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
-		case myColor == WHITE && piece.GetPieceType() == PAWN && steps == 1:
+		case myColor == WHITE && piece.GetPieceType() == PAWN && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
 
 	// look east
-	piece, steps = b.getClosestPieceInDirection(square, EAST)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, EAST)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == ROOK:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
 
 	// look southeast
-	piece, steps = b.getClosestPieceInDirection(square, SOUTHEAST)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, SOUTHEAST)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == BISHOP:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
-		case myColor == BLACK && piece.GetPieceType() == PAWN && steps == 1:
+		case myColor == BLACK && piece.GetPieceType() == PAWN && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
 
 	// look south
-	piece, steps = b.getClosestPieceInDirection(square, SOUTH)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, SOUTH)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == ROOK:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
 
 	// look southwest
-	piece, steps = b.getClosestPieceInDirection(square, SOUTHWEST)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, SOUTHWEST)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == BISHOP:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
-		case myColor == BLACK && piece.GetPieceType() == PAWN && steps == 1:
+		case myColor == BLACK && piece.GetPieceType() == PAWN && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
 
 	// look west
-	piece, steps = b.getClosestPieceInDirection(square, WEST)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, WEST)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == ROOK:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
 
 	// look northwest
-	piece, steps = b.getClosestPieceInDirection(square, NORTHWEST)
+	piece, pieceSquare = b.getClosestPieceInDirection(square, NORTHWEST)
 	if piece != nil && piece.GetColor() == oppColor {
 		switch {
 		case piece.GetPieceType() == QUEEN:
 			return true
 		case piece.GetPieceType() == BISHOP:
 			return true
-		case piece.GetPieceType() == KING && steps == 1:
+		case piece.GetPieceType() == KING && NumSteps(square, pieceSquare) == 1:
 			return true
-		case myColor == WHITE && piece.GetPieceType() == PAWN && steps == 1:
+		case myColor == WHITE && piece.GetPieceType() == PAWN && NumSteps(square, pieceSquare) == 1:
 			return true
 		}
 	}
@@ -687,26 +777,24 @@ func (b *board) getKnightAt(row, col int) *Piece {
 	return piece
 }
 
-func (b *board) getClosestPieceInDirection(s Square, d Direction) (*Piece, int) {
+func (b *board) getClosestPieceInDirection(s Square, d Direction) (*Piece, Square) {
 	var curr Square = s
 	var err error
 	var piece *Piece
 
-	var steps int
 	for {
-		steps += 1
 		curr, err = curr.Step(d)
 
 		if err != nil {
 			// did not run into any pieces, move off the board
-			return nil, steps
+			return nil, curr
 		}
 
 		piece, err = b.GetPieceAt(curr)
 
 		if err == nil {
 			// ran into a piece
-			return piece, steps
+			return piece, curr
 		}
 	}
 }

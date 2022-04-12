@@ -28,5 +28,5 @@ func (c Color) Opposite() Color {
 		return WHITE
 	}
 
-	panic(fmt.Sprintf("Unhandled switch case: %d", c))
+	panic(fmt.Sprintf("Unhandled switch case: %s", c))
 }
