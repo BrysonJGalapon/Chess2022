@@ -5,7 +5,7 @@ import "fmt"
 type Move interface {
 	GetSrcSquare() Square
 	GetDstSquare() Square
-	GetPromotionPieceType() PieceType
+	GetPromotionPieceType() *PieceType
 	AddPromotionPieceType(PieceType) Move
 	String() string
 	IsEmpty() bool
@@ -25,12 +25,8 @@ func (m *move) GetDstSquare() Square {
 	return m.dstSquare
 }
 
-func (m *move) GetPromotionPieceType() PieceType {
-	if m.promotionPieceType == nil {
-		panic("no promotion piece type in this move")
-	}
-
-	return *m.promotionPieceType
+func (m *move) GetPromotionPieceType() *PieceType {
+	return m.promotionPieceType
 }
 
 func (m *move) AddPromotionPieceType(promotionPieceType PieceType) Move {
@@ -86,7 +82,7 @@ func (em *emptyMove) GetDstSquare() Square {
 	panic("can't call GetDstSquare on empty move")
 }
 
-func (em *emptyMove) GetPromotionPieceType() PieceType {
+func (em *emptyMove) GetPromotionPieceType() *PieceType {
 	panic("can't call GetPromotionPieceType on empty move")
 }
 

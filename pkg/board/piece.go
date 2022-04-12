@@ -285,3 +285,40 @@ func (p *Piece) String() string {
 
 	panic(fmt.Sprintf("Unhandled switch case: %d, %d", p.color, p.pieceType))
 }
+
+func GetPiece(c Color, pt PieceType) *Piece {
+	switch c {
+	case WHITE:
+		switch pt {
+		case KING:
+			return WHITE_KING
+		case QUEEN:
+			return WHITE_QUEEN
+		case BISHOP:
+			return WHITE_BISHOP
+		case KNIGHT:
+			return WHITE_KNIGHT
+		case ROOK:
+			return WHITE_ROOK
+		case PAWN:
+			return WHITE_PAWN
+		}
+	case BLACK:
+		switch pt {
+		case KING:
+			return BLACK_KING
+		case QUEEN:
+			return BLACK_QUEEN
+		case BISHOP:
+			return BLACK_BISHOP
+		case KNIGHT:
+			return BLACK_KNIGHT
+		case ROOK:
+			return BLACK_ROOK
+		case PAWN:
+			return BLACK_PAWN
+		}
+	}
+
+	panic(fmt.Sprintf("Unhandled switch case: %d, %d", c, pt))
+}

@@ -2,13 +2,12 @@ package random_player
 
 import (
 	"math/rand"
-	"time"
 
 	b "galapb/chess2022/pkg/board"
 )
 
 func init() {
-	rand.Seed(33423432)
+	rand.Seed(36)
 }
 
 type RandomPlayer struct {
@@ -50,8 +49,17 @@ func (rp *RandomPlayer) getMove(board b.Board) b.Move {
 		srcSquare = b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
 		dstSquare = b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
 		move = b.NewMove(srcSquare, dstSquare).Build()
+
+		// add a promotion piece if promoting a pawn
+		if piece, _ := board.GetPieceAt(srcSquare); piece != nil && piece.GetPieceType() == b.PAWN && (dstSquare.GetRank() == 1 || dstSquare.GetRank() == 8) {
+			move = move.AddPromotionPieceType(rp.getRandomPromotionPieceType())
+		}
 	}
 
-	time.Sleep(3 * time.Second)
 	return move
+}
+
+func (rp *RandomPlayer) getRandomPromotionPieceType() b.PieceType {
+	i := rand.Intn(len(b.PROMOTION_PIECE_TYPES))
+	return b.PROMOTION_PIECE_TYPES[i]
 }

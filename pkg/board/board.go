@@ -7,6 +7,8 @@ type Board interface {
 	IsValidMove(Move) error
 	Copy() Board
 	String() string
+	GetPieceAt(Square) (*Piece, error)
+	GetPly() int
 
 	makeUnsafe(Move)
 	toggleTurn()
@@ -40,6 +42,8 @@ type board struct {
 
 	// turn
 	turn Color
+
+	ply int
 }
 
 func (b *board) getPieceBitmap(color Color, pieceType PieceType) BitMap {
@@ -77,6 +81,10 @@ func (b *board) getPieceBitmap(color Color, pieceType PieceType) BitMap {
 	}
 
 	panic(fmt.Sprintf("Unhandled switch case: %s, %s", color.String(), pieceType.String()))
+}
+
+func (b *board) GetPly() int {
+	return b.ply
 }
 
 func (b *board) setPieceBitmap(color Color, pieceType PieceType, bitmap BitMap) {
@@ -128,7 +136,7 @@ func (b *board) setPieceBitmap(color Color, pieceType PieceType, bitmap BitMap) 
 	panic(fmt.Sprintf("Unhandled switch case: %s, %s", color.String(), pieceType.String()))
 }
 
-func (b *board) getPieceAt(square Square) (*Piece, error) {
+func (b *board) GetPieceAt(square Square) (*Piece, error) {
 	var bitmap BitMap = square.ToBitMap()
 
 	switch {
@@ -192,16 +200,25 @@ func (b *board) makeUnsafe(m Move) {
 	dstSquare = m.GetDstSquare()
 
 	piece = b.pickUpPieceAt(srcSquare)
-	if piece != nil {
+
+	if piece.GetPieceType() == PAWN && (dstSquare.GetRank() == 1 || dstSquare.GetRank() == 8) {
+		// promotion moves
+		b.placePieceAt(GetPiece(piece.GetColor(), *m.GetPromotionPieceType()), dstSquare)
+	} else {
+		// normal moves
 		b.placePieceAt(piece, dstSquare)
 	}
 
-	// toggle the turn
 	b.toggleTurn()
+	b.incrementPly()
 }
 
 func (b *board) toggleTurn() {
 	b.turn = b.turn.Opposite()
+}
+
+func (b *board) incrementPly() {
+	b.ply += 1
 }
 
 func (b *board) setTurn(color Color) {
@@ -209,7 +226,7 @@ func (b *board) setTurn(color Color) {
 }
 
 func (b *board) pickUpPieceAt(s Square) *Piece {
-	piece, err := b.getPieceAt(s)
+	piece, err := b.GetPieceAt(s)
 	if err != nil {
 		// no piece on the square, do nothing and return nothing
 		return nil
@@ -226,7 +243,7 @@ func (b *board) pickUpPieceAt(s Square) *Piece {
 }
 
 func (b *board) placePieceAt(p *Piece, s Square) *Piece {
-	pieceOriginallyAtSqaure, err := b.getPieceAt(s)
+	pieceOriginallyAtSqaure, err := b.GetPieceAt(s)
 	if err == nil {
 		// update the bitmap of the removed piece
 		pieceOriginallyAtSqaureColor := pieceOriginallyAtSqaure.GetColor()
@@ -262,7 +279,7 @@ func (b *board) isAnyPieceBetween(srcSquare, dstSquare Square) bool {
 			break
 		}
 
-		_, err = b.getPieceAt(curr)
+		_, err = b.GetPieceAt(curr)
 		if err == nil {
 			// found a piece
 			return true
@@ -282,7 +299,7 @@ func (b *board) IsValidMove(m Move) error {
 	dstSquare = m.GetDstSquare()
 
 	// check that a piece exists on the src square
-	srcPiece, err = b.getPieceAt(srcSquare)
+	srcPiece, err = b.GetPieceAt(srcSquare)
 	if err != nil {
 		return fmt.Errorf("no piece on src square: %s", srcSquare.GetName())
 	}
@@ -293,7 +310,7 @@ func (b *board) IsValidMove(m Move) error {
 	}
 
 	// check that if there a piece on the destination square, that the captured piece's color is the opposite of the side to move
-	dstPiece, err = b.getPieceAt(dstSquare)
+	dstPiece, err = b.GetPieceAt(dstSquare)
 	if err == nil && dstPiece.GetColor() == b.GetTurn() {
 		return fmt.Errorf("%s can't move a piece onto another %s piece", b.GetTurn(), dstPiece.GetColor())
 	}
@@ -311,6 +328,11 @@ func (b *board) IsValidMove(m Move) error {
 	// if the src piece is a pawn, and if the pawn is capturing a piece, check that the destination square either has a piece, or is the en-passent square
 	if srcPiece.GetPieceType() == PAWN && srcPiece.IsValidCapture(srcSquare, dstSquare) == nil && dstPiece == nil && dstSquare.ToBitMap() != b.enPassentBitMap {
 		return fmt.Errorf("pawn can't capture a piece that does not exist on the destination square, without en-passent")
+	}
+
+	// if the src piece is a pawn, and if the pawn is entering the 1st or 8th rank, check that promotion piece is valid
+	if srcPiece.GetPieceType() == PAWN && (dstSquare.GetRank() == 1 || dstSquare.GetRank() == 8) && (m.GetPromotionPieceType() == nil || !m.GetPromotionPieceType().IsValidPromotionPiece()) {
+		return fmt.Errorf("pawn can't enter 1st or 8th rank without promoting to a valid piece")
 	}
 
 	// TODO
@@ -368,7 +390,7 @@ func (b *board) String() string {
 
 	ret := ""
 	for i := 0; i < 64; i++ {
-		if piece, err = b.getPieceAt(square); err != nil {
+		if piece, err = b.GetPieceAt(square); err != nil {
 			ret += "-"
 		} else {
 			ret += piece.String()
@@ -407,6 +429,8 @@ func Standard() Board {
 		blackQueenSide: true,
 
 		turn: WHITE,
+
+		ply: 0,
 	}
 }
 

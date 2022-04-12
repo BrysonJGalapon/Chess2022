@@ -35,7 +35,7 @@ func main() {
 
 	// run the game
 	var move board.Move = board.GetEmptyMove()
-	for !game.IsOver() {
+	for !game.IsOver() && game.GetBoard().GetPly() < 200 {
 		whitePrompt <- move
 		move = <-whiteResponse
 
@@ -56,6 +56,4 @@ func main() {
 		log.Printf("Black made move: %s", move)
 		log.Printf("Board:\n%s", game.GetBoard().String())
 	}
-
-	log.Println(game)
 }
