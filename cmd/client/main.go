@@ -27,33 +27,49 @@ func main() {
 
 	// build the game
 	var timeControl time_control.TimeControl = time_control.Builder().Minutes(3).Build()
-	var game game.Game = game.New(timeControl, whitePlayer, blackPlayer).Build()
+	var g game.Game = game.New(timeControl, whitePlayer, blackPlayer).Build()
 
 	// start the players
-	go whitePlayer.Start(game.GetBoard().Copy(), whiteQuit)
-	go blackPlayer.Start(game.GetBoard().Copy(), blackQuit)
+	go whitePlayer.Start(g.GetBoard().Copy(), whiteQuit)
+	go blackPlayer.Start(g.GetBoard().Copy(), blackQuit)
+
+	var result game.Result
+	var reason game.Reason
 
 	// run the game
 	var move board.Move = board.GetEmptyMove()
-	for !game.IsOver() && game.GetBoard().GetPly() < 200 {
+	for {
+		if result, reason = g.GetResult(); result != game.UNDETERMINED {
+			// game is over
+			break
+		}
+
 		whitePrompt <- move
 		move = <-whiteResponse
 
-		if err := game.GetBoard().Make(move); err != nil {
+		if err := g.GetBoard().Make(move); err != nil {
 			panic(fmt.Sprintf("invalid move by white: %s", err))
 		}
 
 		log.Printf("White made move: %s", move)
-		log.Printf("Board:\n%s", game.GetBoard().String())
+		log.Printf("Board:\n%s", g.GetBoard().String())
+
+		if result, reason = g.GetResult(); result != game.UNDETERMINED {
+			// game is over
+			break
+		}
 
 		blackPrompt <- move
 		move = <-blackResponse
 
-		if err := game.GetBoard().Make(move); err != nil {
+		if err := g.GetBoard().Make(move); err != nil {
 			panic(fmt.Sprintf("invalid move by black: %s", err))
 		}
 
 		log.Printf("Black made move: %s", move)
-		log.Printf("Board:\n%s", game.GetBoard().String())
+		log.Printf("Board:\n%s", g.GetBoard().String())
 	}
+
+	// print results of the game
+	log.Printf("%s due to %s", result, reason)
 }

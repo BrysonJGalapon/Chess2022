@@ -11,12 +11,13 @@ type Board interface {
 	String() string
 	GetPieceAt(Square) (*Piece, error)
 	GetPly() int
+	GetStatus() Status
+	GetTurn() Color
 
 	makeUnsafe(Move)
 	toggleTurn()
 	setTurn(Color)
 	isCheck() bool
-	isCheckWrapper() bool
 }
 
 type board struct {
@@ -206,7 +207,8 @@ func (b *board) makeUnsafe(m Move) {
 
 	if piece.GetPieceType() == PAWN && (dstSquare.GetRank() == 1 || dstSquare.GetRank() == 8) {
 		// promotion moves
-		b.placePieceAt(GetPiece(piece.GetColor(), *m.GetPromotionPieceType()), dstSquare)
+		promotionPiece := GetPiece(piece.GetColor(), *m.GetPromotionPieceType())
+		b.placePieceAt(promotionPiece, dstSquare)
 	} else {
 		// normal moves
 		b.placePieceAt(piece, dstSquare)
@@ -226,6 +228,11 @@ func (b *board) incrementPly() {
 
 func (b *board) setTurn(color Color) {
 	b.turn = color
+}
+
+func (b *board) GetStatus() Status {
+	// TODO
+	return UNDETERMINED
 }
 
 func (b *board) pickUpPieceAt(s Square) *Piece {
@@ -352,21 +359,12 @@ func (b *board) IsValidMove(m Move) error {
 	bCopy := b.Copy()
 	bCopy.makeUnsafe(m)
 	bCopy.setTurn(b.GetTurn())
-	if bCopy.isCheckWrapper() {
+	if bCopy.isCheck() {
 		return fmt.Errorf("%s can't make a move %s that puts king in check", m.String(), b.GetTurn())
 	}
 
 	// move passes all checks
 	return nil
-}
-
-func (b *board) isCheckWrapper() bool {
-	ret := b.isCheck()
-	if ret {
-		// log.Printf(b.GetTurn().String())
-		// log.Printf("\n%s\n", b)
-	}
-	return ret
 }
 
 func (b *board) isCheck() bool {
