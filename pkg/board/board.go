@@ -205,17 +205,54 @@ func (b *board) makeUnsafe(m Move) {
 
 	piece = b.pickUpPieceAt(srcSquare)
 
-	if piece.GetPieceType() == PAWN && (dstSquare.GetRank() == 1 || dstSquare.GetRank() == 8) {
+	switch {
+	case piece.GetPieceType() == PAWN && (dstSquare.GetRank() == 1 || dstSquare.GetRank() == 8):
 		// promotion moves
 		promotionPiece := GetPiece(piece.GetColor(), *m.GetPromotionPieceType())
 		b.placePieceAt(promotionPiece, dstSquare)
-	} else {
+	case piece.GetPieceType() == PAWN && dstSquare.ToBitMap() == b.enPassentBitMap:
+		// en-passent captures
+		b.placePieceAt(piece, dstSquare)
+
+		var capturedPawnSquare Square
+		if b.GetTurn() == WHITE {
+			capturedPawnSquare, _ = dstSquare.Step(SOUTH) // white captured enpassent, so the captured piece is below the destination square
+		} else {
+			capturedPawnSquare, _ = dstSquare.Step(NORTH) // black captured enpassent, so the captured piece is above the destination square
+		}
+
+		b.pickUpPieceAt(capturedPawnSquare)
+	default:
 		// normal moves
 		b.placePieceAt(piece, dstSquare)
 	}
 
+	b.updateEnPassentBitmap(m)
 	b.toggleTurn()
 	b.incrementPly()
+}
+
+func (b *board) updateEnPassentBitmap(m Move) {
+	var srcSquare, dstSquare Square
+	var enPassentSquare Square
+	var piece *Piece
+
+	srcSquare = m.GetSrcSquare()
+	dstSquare = m.GetDstSquare()
+	piece, _ = b.GetPieceAt(dstSquare)
+
+	if piece.GetPieceType() != PAWN {
+		b.enPassentBitMap = 0 // pawn must be moved to set en-passent bitmap
+		return
+	}
+
+	if srcSquare.DistanceSquaredTo(dstSquare) != 4 {
+		b.enPassentBitMap = 0 // pawn must be moved 2 squares up or down to set en-passent bitmap
+		return
+	}
+
+	enPassentSquare, _ = srcSquare.Step(srcSquare.DirectionTo(dstSquare))
+	b.enPassentBitMap = enPassentSquare.ToBitMap()
 }
 
 func (b *board) toggleTurn() {
