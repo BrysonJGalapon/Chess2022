@@ -239,6 +239,12 @@ func GetSquareFromCoord(row, col int) Square {
 	return coordToSquare[row][col]
 }
 
+func GetSquareFromIndex(i int) Square {
+	var row int = i % 8
+	var col int = i / 8
+	return GetSquareFromCoord(row, col)
+}
+
 func GetSquareFromRankAndFile(rank, file int) Square {
 	return coordToSquare[8-rank][file-1]
 }

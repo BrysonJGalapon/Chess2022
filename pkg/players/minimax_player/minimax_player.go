@@ -32,8 +32,13 @@ func init() {
 	}
 }
 
-func New(prompt chan b.Move, response chan b.Move) *MiniMaxPlayer {
-	return &MiniMaxPlayer{prompt, response, 2}
+func New() *MiniMaxPlayer {
+	return &MiniMaxPlayer{nil, nil, 2}
+}
+
+func (mp *MiniMaxPlayer) Init(prompt chan b.Move, response chan b.Move) {
+	mp.prompt = prompt
+	mp.response = response
 }
 
 func (mp *MiniMaxPlayer) Start(board b.Board, quit chan bool) {
@@ -154,14 +159,29 @@ func (rp *MiniMaxPlayer) max(board b.Board, depth int) (b.Move, float64) {
 	var bCopy b.Board
 	var err error
 	var h float64
+	var p *b.Piece
 
 	var bestH float64 = -1000
 	var bestMoves []b.Move = make([]b.Move, 0)
 
 	for _, move := range ALL_POSSIBLE_MOVES {
 		bCopy = board.Copy()
+
+		if p, err = bCopy.GetPieceAt(move.GetSrcSquare()); err != nil {
+			continue // ignore moves which do not move a piece
+		}
+
+		if p.GetPieceType() == b.PAWN && (move.GetDstSquare().GetRank() == 1 || move.GetDstSquare().GetRank() == 8) {
+			// always promote to a queen
+			move = move.AddPromotionPieceType(b.QUEEN)
+		}
+
 		if err = bCopy.Make(move); err != nil {
 			continue // ignore invalid moves
+		}
+
+		if bCopy.IsCheckmate() {
+			return move, -1000
 		}
 
 		if depth == 1 {

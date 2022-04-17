@@ -13,8 +13,13 @@ type InteractivePlayer struct {
 	response chan b.Move
 }
 
-func New(prompt chan b.Move, response chan b.Move) *InteractivePlayer {
-	return &InteractivePlayer{prompt, response}
+func New() *InteractivePlayer {
+	return &InteractivePlayer{nil, nil}
+}
+
+func (ip *InteractivePlayer) Init(prompt chan b.Move, response chan b.Move) {
+	ip.prompt = prompt
+	ip.response = response
 }
 
 func (ip *InteractivePlayer) Start(board b.Board, quit chan bool) {

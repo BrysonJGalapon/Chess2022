@@ -5,6 +5,7 @@ import (
 	"galapb/chess2022/pkg/board"
 	"galapb/chess2022/pkg/players/player"
 	"galapb/chess2022/pkg/time_control"
+	"log"
 )
 
 type Game interface {
@@ -13,6 +14,7 @@ type Game interface {
 	GetBlackPlayer() player.Player
 	GetBoard() board.Board
 	GetResult() (Result, Reason)
+	Run() (Result, Reason)
 }
 
 type GameBuilder interface {
@@ -25,6 +27,14 @@ type game struct {
 	whitePlayer player.Player
 	blackPlayer player.Player
 	board       board.Board
+
+	whitePrompt   chan board.Move
+	whiteResponse chan board.Move
+	blackPrompt   chan board.Move
+	blackResponse chan board.Move
+
+	whiteQuit chan bool
+	blackQuit chan bool
 }
 
 func (g *game) GetTimeControl() time_control.TimeControl {
@@ -56,6 +66,56 @@ func (g *game) String() string {
 	return fmt.Sprintf("{time control: %s, white player: %s, black player: %s, board: %s}", g.timeControl, g.whitePlayer, g.blackPlayer, g.board)
 }
 
+func (g *game) Run() (Result, Reason) {
+	b := g.GetBoard()
+
+	g.whitePlayer.Init(g.whitePrompt, g.whiteResponse)
+	g.blackPlayer.Init(g.blackPrompt, g.blackResponse)
+
+	go g.whitePlayer.Start(b.Copy(), g.whiteQuit)
+	go g.blackPlayer.Start(b.Copy(), g.blackQuit)
+
+	var result Result
+	var reason Reason
+	var move board.Move = board.GetEmptyMove()
+	for {
+		log.Printf("Board:\n%s", g.GetBoard().String())
+
+		if result, reason = g.GetResult(); result != UNDETERMINED {
+			// game is over
+			break
+		}
+
+		g.whitePrompt <- move
+		move = <-g.whiteResponse
+
+		if err := g.GetBoard().Make(move); err != nil {
+			panic(fmt.Sprintf("invalid move by white: %s", err))
+		}
+
+		log.Printf("White made move: %s", move)
+		log.Printf("Board:\n%s", g.GetBoard().String())
+
+		if result, reason = g.GetResult(); result != UNDETERMINED {
+			// game is over
+			break
+		}
+
+		g.blackPrompt <- move
+		move = <-g.blackResponse
+
+		if err := g.GetBoard().Make(move); err != nil {
+			panic(fmt.Sprintf("invalid move by black: %s", err))
+		}
+
+		log.Printf("Black made move: %s", move)
+	}
+
+	// print results of the game
+	log.Printf("%s due to %s", result, reason)
+	return result, reason
+}
+
 func (g *game) GetResult() (Result, Reason) {
 	b := g.GetBoard()
 
@@ -85,5 +145,24 @@ func (g *game) GetResult() (Result, Reason) {
 }
 
 func New(tc time_control.TimeControl, whitePlayer player.Player, blackPlayer player.Player) GameBuilder {
-	return &game{tc, whitePlayer, blackPlayer, board.Standard()}
+	var whitePrompt chan board.Move = make(chan board.Move, 1)
+	var whiteResponse chan board.Move = make(chan board.Move, 1)
+	var blackPrompt chan board.Move = make(chan board.Move, 1)
+	var blackResponse chan board.Move = make(chan board.Move, 1)
+
+	var whiteQuit chan bool = make(chan bool)
+	var blackQuit chan bool = make(chan bool)
+
+	return &game{
+		tc,
+		whitePlayer,
+		blackPlayer,
+		board.Standard(),
+		whitePrompt,
+		whiteResponse,
+		blackPrompt,
+		blackResponse,
+		whiteQuit,
+		blackQuit,
+	}
 }

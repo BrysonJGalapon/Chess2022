@@ -14,6 +14,8 @@ type Board interface {
 	GetStatus() Status
 	GetTurn() Color
 	GetNumOf(c Color, pt PieceType) int
+	GetPieceBitmap(c Color, pt PieceType) BitMap
+	IsCheckmate() bool
 
 	makeUnsafe(Move)
 	toggleTurn()
@@ -52,7 +54,7 @@ type board struct {
 	ply int
 }
 
-func (b *board) getPieceBitmap(color Color, pieceType PieceType) BitMap {
+func (b *board) GetPieceBitmap(color Color, pieceType PieceType) BitMap {
 	switch color {
 	case WHITE:
 		switch pieceType {
@@ -454,7 +456,7 @@ func (b *board) pickUpPieceAt(s Square) *Piece {
 	color := piece.GetColor()
 	pieceType := piece.GetPieceType()
 
-	bitmap := b.getPieceBitmap(color, pieceType)
+	bitmap := b.GetPieceBitmap(color, pieceType)
 	bitmap = bitmap &^ (s.ToBitMap()) // removes the bit that square represents from the bitmap, if it exists
 	b.setPieceBitmap(color, pieceType, bitmap)
 
@@ -467,7 +469,7 @@ func (b *board) placePieceAt(p *Piece, s Square) *Piece {
 		// update the bitmap of the removed piece
 		pieceOriginallyAtSqaureColor := pieceOriginallyAtSqaure.GetColor()
 		pieceOriginallyAtSqaurePieceType := pieceOriginallyAtSqaure.GetPieceType()
-		bitmap := b.getPieceBitmap(pieceOriginallyAtSqaureColor, pieceOriginallyAtSqaurePieceType)
+		bitmap := b.GetPieceBitmap(pieceOriginallyAtSqaureColor, pieceOriginallyAtSqaurePieceType)
 		bitmap = bitmap &^ (s.ToBitMap()) // removes the bit that square represents from the bitmap, if it exists
 		b.setPieceBitmap(pieceOriginallyAtSqaureColor, pieceOriginallyAtSqaurePieceType, bitmap)
 	}
@@ -475,7 +477,7 @@ func (b *board) placePieceAt(p *Piece, s Square) *Piece {
 	// update the bitmap of the added piece
 	pieceColor := p.GetColor()
 	piecePieceType := p.GetPieceType()
-	bitmap := b.getPieceBitmap(pieceColor, piecePieceType)
+	bitmap := b.GetPieceBitmap(pieceColor, piecePieceType)
 	bitmap = bitmap | (s.ToBitMap()) // adds the bit that square represents to the bitmap
 	b.setPieceBitmap(pieceColor, piecePieceType, bitmap)
 
