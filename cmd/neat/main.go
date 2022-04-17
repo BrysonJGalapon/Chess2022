@@ -16,8 +16,8 @@ import (
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 )
 
-const NEAT_PARAMS_FILE string = "./pkg/players/neat_player/player/config/params.neat"
-const GENOME_FILE string = "./pkg/players/neat_player/player/config/startgenes"
+const NEAT_PARAMS_FILE string = "./pkg/players/neat_player/player/config/params.yml"
+const GENOME_FILE string = "./pkg/players/neat_player/player/config/startgenes.yml"
 const OUT_DIR string = "./pkg/players/neat_player/player/data"
 
 func main() {
@@ -27,9 +27,9 @@ func main() {
 		log.Fatal("Failed to open context configuration file: ", err)
 	}
 
-	neatOptions, err := neat.LoadNeatOptions(params)
+	neatOptions, err := neat.LoadYAMLOptions(params)
 	if err != nil {
-		log.Fatal("Failed to load NEAT options: ", err)
+		log.Fatal("Failed to load YAML options: ", err)
 	}
 
 	// Load Start Genome
@@ -38,7 +38,12 @@ func main() {
 		log.Fatal("Failed to open genome file: ", err)
 	}
 
-	startGenome, err := genetics.ReadGenome(genomeFile, 1)
+	r, err := genetics.NewGenomeReader(genomeFile, genetics.YAMLGenomeEncoding)
+	if err != nil {
+		log.Fatal("Failed to create genome reader: ", err)
+	}
+
+	startGenome, err := r.Read()
 	if err != nil {
 		log.Fatal("Failed to read start genome: ", err)
 	}
