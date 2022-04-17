@@ -16,6 +16,7 @@ type Board interface {
 	GetNumOf(c Color, pt PieceType) int
 	GetPieceBitmap(c Color, pt PieceType) BitMap
 	IsCheckmate() bool
+	IsStalemate() bool
 
 	makeUnsafe(Move)
 	toggleTurn()

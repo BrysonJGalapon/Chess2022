@@ -13,6 +13,7 @@ const (
 	INSUFFICIENT_MATERIAL
 	FIFTY_MOVE_RULE
 	THREEFOLD_REPETITION
+	PLY_LIMIT_REACHED
 )
 
 func (r Reason) String() string {
@@ -33,6 +34,8 @@ func (r Reason) String() string {
 		return "fifty move rule"
 	case THREEFOLD_REPETITION:
 		return "three-fold repetition"
+	case PLY_LIMIT_REACHED:
+		return "ply limit reached"
 	}
 
 	panic(fmt.Sprintf("Unhandled switch case: %d", r))

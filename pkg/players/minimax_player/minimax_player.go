@@ -135,7 +135,13 @@ func (rp *MiniMaxPlayer) min(board b.Board, depth int) (b.Move, float64) {
 			continue // ignore invalid moves
 		}
 
-		if depth == 1 {
+		if bCopy.IsCheckmate() {
+			return move, -1000
+		}
+
+		if bCopy.IsStalemate() {
+			h = 0
+		} else if depth == 1 {
 			h = rp.heuristic(bCopy)
 		} else {
 			_, h = rp.max(bCopy, depth-1)
@@ -181,10 +187,12 @@ func (rp *MiniMaxPlayer) max(board b.Board, depth int) (b.Move, float64) {
 		}
 
 		if bCopy.IsCheckmate() {
-			return move, -1000
+			return move, 1000
 		}
 
-		if depth == 1 {
+		if bCopy.IsStalemate() {
+			h = 0
+		} else if depth == 1 {
 			h = rp.heuristic(bCopy)
 		} else {
 			_, h = rp.min(bCopy, depth-1)

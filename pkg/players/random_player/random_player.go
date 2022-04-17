@@ -15,8 +15,13 @@ type RandomPlayer struct {
 	response chan b.Move
 }
 
-func New(prompt chan b.Move, response chan b.Move) *RandomPlayer {
-	return &RandomPlayer{prompt, response}
+func New() *RandomPlayer {
+	return &RandomPlayer{nil, nil}
+}
+
+func (rp *RandomPlayer) Init(prompt chan b.Move, response chan b.Move) {
+	rp.prompt = prompt
+	rp.response = response
 }
 
 func (rp *RandomPlayer) Start(board b.Board, quit chan bool) {

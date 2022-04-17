@@ -240,6 +240,10 @@ func GetSquareFromCoord(row, col int) Square {
 }
 
 func GetSquareFromIndex(i int) Square {
+	if i < 0 || i > 63 {
+		panic(fmt.Sprintf("can't get square from index: %d", i))
+	}
+
 	var row int = i % 8
 	var col int = i / 8
 	return GetSquareFromCoord(row, col)

@@ -19,6 +19,8 @@ type Game interface {
 
 type GameBuilder interface {
 	Board(board.Board) GameBuilder
+	Verbose(bool) GameBuilder
+	PlyLimit(int) GameBuilder
 	Build() Game
 }
 
@@ -35,6 +37,8 @@ type game struct {
 
 	whiteQuit chan bool
 	blackQuit chan bool
+	verbose   bool
+	plyLimit  int
 }
 
 func (g *game) GetTimeControl() time_control.TimeControl {
@@ -55,6 +59,16 @@ func (g *game) GetBoard() board.Board {
 
 func (g *game) Board(board board.Board) GameBuilder {
 	g.board = board
+	return g
+}
+
+func (g *game) Verbose(verbose bool) GameBuilder {
+	g.verbose = verbose
+	return g
+}
+
+func (g *game) PlyLimit(plyLimit int) GameBuilder {
+	g.plyLimit = plyLimit
 	return g
 }
 
@@ -79,10 +93,19 @@ func (g *game) Run() (Result, Reason) {
 	var reason Reason
 	var move board.Move = board.GetEmptyMove()
 	for {
-		log.Printf("Board:\n%s", g.GetBoard().String())
+		if g.verbose {
+			log.Printf("Board:\n%s", g.GetBoard().String())
+		}
 
 		if result, reason = g.GetResult(); result != UNDETERMINED {
 			// game is over
+			break
+		}
+
+		if b.GetPly() >= g.plyLimit {
+			// auto-draw the game if game exceeds the ply limit
+			result = GAME_DRAWN
+			reason = PLY_LIMIT_REACHED
 			break
 		}
 
@@ -93,11 +116,20 @@ func (g *game) Run() (Result, Reason) {
 			panic(fmt.Sprintf("invalid move by white: %s", err))
 		}
 
-		log.Printf("White made move: %s", move)
-		log.Printf("Board:\n%s", g.GetBoard().String())
+		if g.verbose {
+			log.Printf("White made move: %s", move)
+			log.Printf("Board:\n%s", g.GetBoard().String())
+		}
 
 		if result, reason = g.GetResult(); result != UNDETERMINED {
 			// game is over
+			break
+		}
+
+		if b.GetPly() >= g.plyLimit {
+			// auto-draw the game if game exceeds the ply limit
+			result = GAME_DRAWN
+			reason = PLY_LIMIT_REACHED
 			break
 		}
 
@@ -108,11 +140,16 @@ func (g *game) Run() (Result, Reason) {
 			panic(fmt.Sprintf("invalid move by black: %s", err))
 		}
 
-		log.Printf("Black made move: %s", move)
+		if g.verbose {
+			log.Printf("Black made move: %s", move)
+		}
 	}
 
 	// print results of the game
-	log.Printf("%s due to %s", result, reason)
+	if g.verbose {
+		log.Printf("%s due to %s", result, reason)
+	}
+
 	return result, reason
 }
 
@@ -164,5 +201,7 @@ func New(tc time_control.TimeControl, whitePlayer player.Player, blackPlayer pla
 		blackResponse,
 		whiteQuit,
 		blackQuit,
+		true,
+		1000000000,
 	}
 }

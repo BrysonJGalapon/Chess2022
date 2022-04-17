@@ -1,9 +1,8 @@
 package player
 
 import (
-	"galapb/chess2022/pkg/board"
 	b "galapb/chess2022/pkg/board"
-	"log"
+	"math/rand"
 
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 )
@@ -60,23 +59,30 @@ func (np *NeatPlayer) getMove(board b.Board) b.Move {
 	outputs = net.ReadOutputs()
 
 	// Translate NN output to a board move
-	return getBoardMoveFromNetOutputs(outputs)
+	move, isRandomMove := getBoardMoveFromNetOutputs(outputs, board)
+
+	// Penalize the fitness of the organism for making random moves
+	if isRandomMove {
+		np.org.Fitness -= 0.001
+	}
+
+	return move
 }
 
-func getNetInputsFromBoard(b board.Board) []float64 {
+func getNetInputsFromBoard(board b.Board) []float64 {
 	var inputs []float64 = []float64{
-		float64(b.GetPieceBitmap(board.WHITE, board.KING)),
-		float64(b.GetPieceBitmap(board.WHITE, board.QUEEN)),
-		float64(b.GetPieceBitmap(board.WHITE, board.BISHOP)),
-		float64(b.GetPieceBitmap(board.WHITE, board.KNIGHT)),
-		float64(b.GetPieceBitmap(board.WHITE, board.ROOK)),
-		float64(b.GetPieceBitmap(board.WHITE, board.PAWN)),
-		float64(b.GetPieceBitmap(board.BLACK, board.KING)),
-		float64(b.GetPieceBitmap(board.BLACK, board.QUEEN)),
-		float64(b.GetPieceBitmap(board.BLACK, board.BISHOP)),
-		float64(b.GetPieceBitmap(board.BLACK, board.KNIGHT)),
-		float64(b.GetPieceBitmap(board.BLACK, board.ROOK)),
-		float64(b.GetPieceBitmap(board.BLACK, board.PAWN)),
+		float64(board.GetPieceBitmap(b.WHITE, b.KING)),
+		float64(board.GetPieceBitmap(b.WHITE, b.QUEEN)),
+		float64(board.GetPieceBitmap(b.WHITE, b.BISHOP)),
+		float64(board.GetPieceBitmap(b.WHITE, b.KNIGHT)),
+		float64(board.GetPieceBitmap(b.WHITE, b.ROOK)),
+		float64(board.GetPieceBitmap(b.WHITE, b.PAWN)),
+		float64(board.GetPieceBitmap(b.BLACK, b.KING)),
+		float64(board.GetPieceBitmap(b.BLACK, b.QUEEN)),
+		float64(board.GetPieceBitmap(b.BLACK, b.BISHOP)),
+		float64(board.GetPieceBitmap(b.BLACK, b.KNIGHT)),
+		float64(board.GetPieceBitmap(b.BLACK, b.ROOK)),
+		float64(board.GetPieceBitmap(b.BLACK, b.PAWN)),
 
 		// TODO castling rights, en-passent, + other inputs
 	}
@@ -84,8 +90,37 @@ func getNetInputsFromBoard(b board.Board) []float64 {
 	return inputs
 }
 
-func getBoardMoveFromNetOutputs(outputs []float64) board.Move {
-	log.Println("outputs: ", outputs)
+func getBoardMoveFromNetOutputs(outputs []float64, board b.Board) (b.Move, bool) {
+	srcIndexes, dstIndexes := getSrcAndDstIndexesFromOutputs(outputs)
+	return getBoardMoveFromIndexes(srcIndexes, dstIndexes, board)
+}
+
+func getBoardMoveFromIndexes(srcIndexes, dstIndexes []int, board b.Board) (b.Move, bool) {
+	var srcSquare b.Square
+	var dstSquare b.Square
+	var move b.Move = nil
+	var err error = nil
+
+	Shuffle(srcIndexes)
+	Shuffle(dstIndexes)
+
+	for _, srcIndex := range srcIndexes {
+		for _, dstIndex := range dstIndexes {
+			srcSquare = b.GetSquareFromIndex(srcIndex)
+			dstSquare = b.GetSquareFromIndex(dstIndex)
+
+			move = b.NewMove(srcSquare, dstSquare).Build()
+
+			if err = board.IsValidMove(move); err == nil {
+				return move, false
+			}
+		}
+	}
+
+	return getRandomMove(board), true
+}
+
+func getSrcAndDstIndexesFromOutputs(outputs []float64) ([]int, []int) {
 	var srcIndexes []int = make([]int, 0)
 	var srcIndexScore float64 = 0
 
@@ -102,22 +137,37 @@ func getBoardMoveFromNetOutputs(outputs []float64) board.Move {
 			}
 		} else {
 			if i == 0 || output > dstIndexScore {
-				dstIndexes = []int{i}
+				dstIndexes = []int{i - 64}
 				dstIndexScore = output
 			} else if output == dstIndexScore {
-				dstIndexes = append(dstIndexes, i)
+				dstIndexes = append(dstIndexes, i-64)
 			}
 		}
 	}
 
-	var srcIndex int = getRandomInt(srcIndexes)
-	var dstIndex int = getRandomInt(dstIndexes)
+	return srcIndexes, dstIndexes
+}
 
-	var srcSquare b.Square
-	var dstSquare b.Square
+func getRandomMove(board b.Board) b.Move {
+	srcSquare := b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+	dstSquare := b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+	move := b.NewMove(srcSquare, dstSquare).Build()
 
-	srcSquare = b.GetSquareFromIndex(srcIndex)
-	dstSquare = b.GetSquareFromIndex(dstIndex)
+	for board.IsValidMove(move) != nil {
+		srcSquare = b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+		dstSquare = b.GetSquareFromCoord(rand.Intn(8), rand.Intn(8))
+		move = b.NewMove(srcSquare, dstSquare).Build()
 
-	return b.NewMove(srcSquare, dstSquare).Build()
+		// add a promotion piece if promoting a pawn
+		if piece, _ := board.GetPieceAt(srcSquare); piece != nil && piece.GetPieceType() == b.PAWN && (dstSquare.GetRank() == 1 || dstSquare.GetRank() == 8) {
+			move = move.AddPromotionPieceType(getRandomPromotionPieceType())
+		}
+	}
+
+	return move
+}
+
+func getRandomPromotionPieceType() b.PieceType {
+	i := rand.Intn(len(b.PROMOTION_PIECE_TYPES))
+	return b.PROMOTION_PIECE_TYPES[i]
 }
