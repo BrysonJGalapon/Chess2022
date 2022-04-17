@@ -3,6 +3,7 @@ package player
 import (
 	"galapb/chess2022/pkg/board"
 	b "galapb/chess2022/pkg/board"
+	"log"
 
 	"github.com/yaricom/goNEAT/v2/neat/genetics"
 )
@@ -84,6 +85,7 @@ func getNetInputsFromBoard(b board.Board) []float64 {
 }
 
 func getBoardMoveFromNetOutputs(outputs []float64) board.Move {
+	log.Println("outputs: ", outputs)
 	var srcIndexes []int = make([]int, 0)
 	var srcIndexScore float64 = 0
 
@@ -117,5 +119,5 @@ func getBoardMoveFromNetOutputs(outputs []float64) board.Move {
 	srcSquare = b.GetSquareFromIndex(srcIndex)
 	dstSquare = b.GetSquareFromIndex(dstIndex)
 
-	return nil
+	return b.NewMove(srcSquare, dstSquare).Build()
 }
